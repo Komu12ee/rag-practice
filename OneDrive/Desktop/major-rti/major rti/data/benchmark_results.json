@@ -1,0 +1,159 @@
+{
+  "timestamp": "2026-06-03T00:24:09.135899",
+  "overall_accuracy": 93.33333333333333,
+  "english_accuracy": 100.0,
+  "hindi_accuracy": 100.0,
+  "bilingual_parity_gap": 0.0,
+  "results": [
+    {
+      "id": 1,
+      "expected": "chips",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear CHiPS jurisdiction - e-governance project query"
+    },
+    {
+      "id": 2,
+      "expected": "chips",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "hi",
+      "notes": "Clear CHiPS jurisdiction - Hindi query about government portals"
+    },
+    {
+      "id": 3,
+      "expected": "chips",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "mixed",
+      "notes": "Clear CHiPS jurisdiction - Mixed language query about data center and IT contracts"
+    },
+    {
+      "id": 4,
+      "expected": "revenue",
+      "predicted": "revenue",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear Revenue department jurisdiction - land mutation query"
+    },
+    {
+      "id": 5,
+      "expected": "pwd",
+      "predicted": "pwd",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear PWD jurisdiction - road construction query"
+    },
+    {
+      "id": 6,
+      "expected": "health",
+      "predicted": "health",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear Health department jurisdiction - doctor vacancy and medicine supply"
+    },
+    {
+      "id": 7,
+      "expected": "education",
+      "predicted": "education",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear Education department jurisdiction - school infrastructure and teacher vacancies"
+    },
+    {
+      "id": 8,
+      "expected": "home_police",
+      "predicted": "home_police",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "en",
+      "notes": "Clear Home/Police jurisdiction - FIR and crime statistics"
+    },
+    {
+      "id": 9,
+      "expected": "chips",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "mixed",
+      "notes": "Ambiguous overlap - e-District portal issue could be CHiPS (technical) + Revenue (caste certificate processing). Primary: CHiPS for portal error."
+    },
+    {
+      "id": 10,
+      "expected": "rural_dev",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": false,
+      "alt_match": true,
+      "language": "mixed",
+      "notes": "Ambiguous overlap - MGNREGA website issue could involve CHiPS (technical) + Rural Development (job card data). Primary: Rural Dev for job card status."
+    },
+    {
+      "id": 11,
+      "expected": "urban_admin",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": false,
+      "alt_match": true,
+      "language": "mixed",
+      "notes": "Ambiguous overlap - Smart City IT system involves Urban Admin (Smart City project) + CHiPS (IT evaluation). Could need transfer to both."
+    },
+    {
+      "id": 12,
+      "expected": "chips",
+      "predicted": "chips",
+      "confidence": "MEDIUM",
+      "correct": true,
+      "alt_match": false,
+      "language": "mixed",
+      "notes": "Ambiguous overlap - Portal issue (CHiPS) + Property tax (Urban Admin). CHiPS primary for portal maintenance query."
+    },
+    {
+      "id": 13,
+      "expected": "energy",
+      "predicted": "energy",
+      "confidence": "LOW",
+      "correct": true,
+      "alt_match": false,
+      "language": "hi",
+      "notes": "Hindi with Chhattisgarhi dialect - electricity complaint about broken wires and billing despite no repair. Energy department jurisdiction."
+    },
+    {
+      "id": 14,
+      "expected": "revenue",
+      "predicted": "revenue",
+      "confidence": "LOW",
+      "correct": true,
+      "alt_match": false,
+      "language": "hi",
+      "notes": "Hindi with Chhattisgarhi dialect - patwari absence and land record issues. Revenue department jurisdiction."
+    },
+    {
+      "id": 15,
+      "expected": "wcd",
+      "predicted": "wcd",
+      "confidence": "LOW",
+      "correct": true,
+      "alt_match": false,
+      "language": "hi",
+      "notes": "Hindi with Chhattisgarhi dialect - anganwadi nutrition supply complaint. Women & Child Development department jurisdiction."
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply antialiased font-sans text-slate-900 dark:text-slate-100;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* App-wide ambient background with subtle brand glow */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(60rem 60rem at 12% -10%, rgba(99, 102, 241, 0.10), transparent 60%),
+      radial-gradient(50rem 50rem at 100% 0%, rgba(168, 85, 247, 0.08), transparent 55%),
+      #f8fafc;
+  }
+  .dark body::before {
+    background:
+      radial-gradient(60rem 60rem at 12% -10%, rgba(99, 102, 241, 0.16), transparent 60%),
+      radial-gradient(50rem 50rem at 100% 0%, rgba(168, 85, 247, 0.12), transparent 55%),
+      #020617;
+  }
+}
+
+@layer components {
+  /* Glassy surface used by header / floating chrome */
+  .glass {
+    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl;
+  }
+
+  /* Standard elevated card */
+  .surface {
+    @apply rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200/70 dark:ring-slate-800 shadow-card;
+  }
+
+  /* Muted section label */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-brand-gradient;
+  }
+}
+
+@layer utilities {
+  .animate-shimmer::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.35),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: shimmer 1.6s infinite;
+  }
+  .dark .animate-shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.06),
+      transparent
+    );
+  }
+}
+
+/* Refined scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.45);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139 / 0.6);
+  background-clip: padding-box;
+}

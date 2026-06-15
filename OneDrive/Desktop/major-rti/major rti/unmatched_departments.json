@@ -1,0 +1,98 @@
+[
+  {
+    "department": "Agriculture Department",
+    "best_score": 47.82608695652174
+  },
+  {
+    "department": "Animal Husbandry Department",
+    "best_score": 46.15384615384615
+  },
+  {
+    "department": "Aviation department",
+    "best_score": 52.63157894736843
+  },
+  {
+    "department": "Chief Minister's Secretariat",
+    "best_score": 48.0
+  },
+  {
+    "department": "Commercial Tax Department (Excise)",
+    "best_score": 45.45454545454546
+  },
+  {
+    "department": "Commercial Tax Department (GST)",
+    "best_score": 48.78048780487805
+  },
+  {
+    "department": "Commercial Tax Department (Registration)",
+    "best_score": 54.90196078431373
+  },
+  {
+    "department": "Culture department",
+    "best_score": 46.15384615384615
+  },
+  {
+    "department": "Department of Public Enterprises",
+    "best_score": 47.36842105263158
+  },
+  {
+    "department": "Department of public health and public welfare",
+    "best_score": 45.45454545454546
+  },
+  {
+    "department": "Fisheries department",
+    "best_score": 40.0
+  },
+  {
+    "department": "Forest Department",
+    "best_score": 47.61904761904761
+  },
+  {
+    "department": "Home department",
+    "best_score": 47.05882352941176
+  },
+  {
+    "department": "Horticulture department",
+    "best_score": 38.297872340425535
+  },
+  {
+    "department": "Jail department",
+    "best_score": 40.0
+  },
+  {
+    "department": "Medical Education (Ayush) Department",
+    "best_score": 58.53658536585367
+  },
+  {
+    "department": "Ministry of Information Technology",
+    "best_score": 46.42857142857143
+  },
+  {
+    "department": "Public Grievance Redressal Department",
+    "best_score": 47.61904761904761
+  },
+  {
+    "department": "Public Health Engineering Department",
+    "best_score": 42.85714285714286
+  },
+  {
+    "department": "Revenue Department",
+    "best_score": 46.15384615384615
+  },
+  {
+    "department": "Rural industries department",
+    "best_score": 52.63157894736843
+  },
+  {
+    "department": "Science and Technology Department",
+    "best_score": 51.162790697674424
+  },
+  {
+    "department": "Technical Education and Manpower Planning Department",
+    "best_score": 58.666666666666664
+  },
+  {
+    "department": "Tourism department",
+    "best_score": 46.15384615384615
+  }
+]

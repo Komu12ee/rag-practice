@@ -1,0 +1,11 @@
+fastapi[standard]
+streamlit
+pdfplumber
+pydantic
+pytesseract
+ollama
+Pillow
+python-docx
+PyMuPDF
+requests
+pdf2image

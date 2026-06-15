@@ -1,0 +1,9 @@
+pydantic
+tqdm
+PyMuPDF
+ollama
+rank_bm25
+chromadb
+sentence-transformers
+pytest
+

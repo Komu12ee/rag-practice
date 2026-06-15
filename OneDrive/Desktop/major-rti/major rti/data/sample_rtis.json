@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "text": "Please provide details of all e-governance projects implemented by CHiPS in the last 3 years, including project cost, vendor name, and current status of each project.",
+    "language": "en",
+    "expected_department": "chips",
+    "expected_transfer": false,
+    "notes": "Clear CHiPS jurisdiction - e-governance project query"
+  },
+  {
+    "id": 2,
+    "text": "कृपया CHiPS द्वारा संचालित सभी सरकारी पोर्टल्स और वेबसाइटों की सूची दें, जिसमें प्रत्येक पोर्टल के रखरखाव पर किया गया वार्षिक खर्च भी शामिल हो।",
+    "language": "hi",
+    "expected_department": "chips",
+    "expected_transfer": false,
+    "notes": "Clear CHiPS jurisdiction - Hindi query about government portals"
+  },
+  {
+    "id": 3,
+    "text": "State government ke data center me kitne servers hain, aur CHiPS ne last 2 saal me konse IT contracts sign kiye hain? Please provide vendor names and contract amounts.",
+    "language": "mixed",
+    "expected_department": "chips",
+    "expected_transfer": false,
+    "notes": "Clear CHiPS jurisdiction - Mixed language query about data center and IT contracts"
+  },
+  {
+    "id": 4,
+    "text": "I want to know the status of my land mutation application filed in Tehsil Raipur on 15th March 2025. My application number is MUT/2025/3456. Also provide the number of pending mutation cases in Raipur tehsil.",
+    "language": "en",
+    "expected_department": "revenue",
+    "expected_transfer": false,
+    "notes": "Clear Revenue department jurisdiction - land mutation query"
+  },
+  {
+    "id": 5,
+    "text": "Please provide the details of road construction work done on NH-130 near Durg district in the last 2 years, including the name of the contractor, tender amount, and whether the work was completed on time.",
+    "language": "en",
+    "expected_department": "pwd",
+    "expected_transfer": false,
+    "notes": "Clear PWD jurisdiction - road construction query"
+  },
+  {
+    "id": 6,
+    "text": "Provide the list of vacant doctor and specialist positions in all Community Health Centers (CHC) in Bastar district, and the status of medicine supply for the last 6 months.",
+    "language": "en",
+    "expected_department": "health",
+    "expected_transfer": false,
+    "notes": "Clear Health department jurisdiction - doctor vacancy and medicine supply"
+  },
+  {
+    "id": 7,
+    "text": "How many primary schools in Jashpur district have no permanent building? What is the pupil-teacher ratio and how many teacher posts are lying vacant for more than 1 year?",
+    "language": "en",
+    "expected_department": "education",
+    "expected_transfer": false,
+    "notes": "Clear Education department jurisdiction - school infrastructure and teacher vacancies"
+  },
+  {
+    "id": 8,
+    "text": "Please provide the total number of FIRs registered in Raipur city in 2025, category-wise breakdown of crimes, and the number of cases where chargesheet was filed within 60 days.",
+    "language": "en",
+    "expected_department": "home_police",
+    "expected_transfer": false,
+    "notes": "Clear Home/Police jurisdiction - FIR and crime statistics"
+  },
+  {
+    "id": 9,
+    "text": "e-District portal par mera caste certificate application 3 mahine se pending hai. Portal baar baar error de raha hai. Kaun zimmedar hai - CHiPS ya Revenue department? Application number ED/2025/7890.",
+    "language": "mixed",
+    "expected_department": "chips",
+    "expected_transfer": true,
+    "notes": "Ambiguous overlap - e-District portal issue could be CHiPS (technical) + Revenue (caste certificate processing). Primary: CHiPS for portal error."
+  },
+  {
+    "id": 10,
+    "text": "MGNREGA ki website par job card ka status nahi dikh raha hai. Kya yeh technical problem hai ya mere job card me koi gadbad hai? District Korba, Block Katghora.",
+    "language": "mixed",
+    "expected_department": "rural_dev",
+    "expected_transfer": true,
+    "notes": "Ambiguous overlap - MGNREGA website issue could involve CHiPS (technical) + Rural Development (job card data). Primary: Rural Dev for job card status."
+  },
+  {
+    "id": 11,
+    "text": "Smart City Raipur project ke under jo IT-based traffic management system lagaya gaya hai, uska total cost, vendor ka naam, aur kya CHiPS ne technical evaluation ki thi - ye sab batayein.",
+    "language": "mixed",
+    "expected_department": "urban_admin",
+    "expected_transfer": true,
+    "notes": "Ambiguous overlap - Smart City IT system involves Urban Admin (Smart City project) + CHiPS (IT evaluation). Could need transfer to both."
+  },
+  {
+    "id": 12,
+    "text": "Online property tax payment portal Nagar Nigam Bilaspur ka kaam nahi kar raha. Yeh portal CHiPS ne banaya tha ya kisi aur vendor ne? Maintenance contract ki details dijiye.",
+    "language": "mixed",
+    "expected_department": "chips",
+    "expected_transfer": true,
+    "notes": "Ambiguous overlap - Portal issue (CHiPS) + Property tax (Urban Admin). CHiPS primary for portal maintenance query."
+  },
+  {
+    "id": 13,
+    "text": "हमर गांव म बिजली के तार टूटे पड़े हें, तीन महीना से शिकायत करत हन फेर भी कोनो नई आवत हे। बिजली बिल तो पूरा वसूलत हें पर लाइन ठीक नई करत। कलेक्टर ल कतेक शिकायत गे हे अउ का कार्रवाई होइस, ये बतावव।",
+    "language": "hi",
+    "expected_department": "energy",
+    "expected_transfer": false,
+    "notes": "Hindi with Chhattisgarhi dialect - electricity complaint about broken wires and billing despite no repair. Energy department jurisdiction."
+  },
+  {
+    "id": 14,
+    "text": "हमर गांव के पटवारी साहब तीन महीना से बइठे नई हें। जमीन के कागजात बनवाए बर दूसर तहसील जाए ल परथे। का पटवारी के तबादला होगे हे? नवा पटवारी कब आही?",
+    "language": "hi",
+    "expected_department": "revenue",
+    "expected_transfer": false,
+    "notes": "Hindi with Chhattisgarhi dialect - patwari absence and land record issues. Revenue department jurisdiction."
+  },
+  {
+    "id": 15,
+    "text": "हमर मोहल्ला के आंगनवाड़ी म बच्चा मन ल दू महीना से खाना नई मिलत हे। आंगनवाड़ी कार्यकर्ता कहिथे कि राशन नई आए हे। कतेक पइसा आइस अउ कहां खरचा होइस ये बतावव। सुपरवाइजर के नाम अउ फोन नंबर भी दव।",
+    "language": "hi",
+    "expected_department": "wcd",
+    "expected_transfer": false,
+    "notes": "Hindi with Chhattisgarhi dialect - anganwadi nutrition supply complaint. Women & Child Development department jurisdiction."
+  }
+]

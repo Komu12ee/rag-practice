@@ -1,0 +1,222 @@
+Comprehensive Analytical Report on the Chhattisgarh Infotech Promotion Society (CHiPS): Legal Status, Operational Infrastructure, Project Portfolios, and RTI Compliance Framework
+1. Legal Status, Formation, and Governing Framework
+The legal foundation of the Chhattisgarh Infotech Promotion Society (CHiPS) represents a hybrid governance model designed to accelerate technology deployment while maintaining executive governmental control. CHiPS was established under a formal order issued by the Department of General Administration, Mantralaya, Government of Chhattisgarh, under Order No. / DS/GAD/2001/ CHiPS dated January 23, 2001.1 This order legally executed the creation of the society and established its Governing Council to oversee all state e-governance implementations.1
+                      
+                                                      │
+                                                      ▼
+                                      
+                                       (Chaired by Chief Minister)
+                                                      │
+                                                      ▼
+                                        
+                                                      │
+                                                      ▼
+                                        [Chief Executive Officer (CEO)]
+                                                      │
+                                        ┌─────────────┴─────────────┐
+                                        ▼                           ▼
+                           [Chief Operating Officer]       [Manager (Finance)]
+                                        │                           │
+                   ┌────────────────────┴────────────────────┐      └────[Financial Audits]
+                   ▼                    ▼                    ▼
+              [Project PMUs]      
+         (SDC, SWAN, GIS, 36Inc)  (Digital Dwaar,    (Hub-and-Spoke model)
+                                  Sewa Setu, etc.)
+
+CHiPS was registered at Raipur on January 23, 2001, under the Madhya Pradesh Society Registrikaran Adhiniyam, 1973 (Act No. 44 of 1973).1 This legislative framework establishes CHiPS as an independent corporate body possessing its own seal, the capacity to enter into contracts, and the ability to sue and be sued, while remaining under the complete ownership of the state government. Administrative control initially resided with the General Administration Department 1 but has since transitioned to the Department of Electronics and Information Technology, Government of Chhattisgarh.2
+As the primary nodal agency and prime mover for propelling Information Technology (IT) growth in the state, CHiPS is legally mandated to design, implement, and maintain e-governance projects.2 This includes formulating investment policies, implementing state-wide data and communications backbones, and executing departmental software integrations.2 Under Section 2(h) of the Right to Information (RTI) Act, 2005, a "public authority" includes any body owned, controlled, or substantially financed by the government.7 Because CHiPS was established by a government order, is governed by state-appointed cabinet ministers and bureaucrats, and is funded by public money, it is legally defined as a public authority.1 Consequently, CHiPS is bound by all statutory disclosure mandates under the RTI Act, including proactive disclosures under Section 4(1)(b).8
+The administrative and legal records of CHiPS's establishment are held directly within the establishment and legal files of the society at its Raipur headquarters.10 Because these documents represent the constitutional basis of the society, they are not exempt from disclosure under any provision of Section 8 or 9 of the RTI Act.
+2. Organizational Structure and Executive Governance
+The operational and policy-making hierarchy of CHiPS is structured to balance bureaucratic oversight with expert technical implementation.2 The highest policy-formulating body is the Governing Council.1 This body brings together cabinet-level ministers and senior administrative officers to ensure high-level alignment with the state's economic and technological strategies.1 The 15-member Governing Council is structured as follows:
+Beneath the Governing Council, an Executive Board consisting of twelve departmental representatives—including nominees from the Finance Department, Law and Legislative Affairs Department, and academic institutions—manages routine administrative, financial, and technical approvals.5
+The Chief Executive Officer (CEO) of CHiPS is a senior member of the Indian Administrative Service (IAS).11 Prominent administrators have shaped the growth of the organization, with the first CEO, Amit Agrawal, establishing the initial administrative framework.1 Subsequent leaders, including Niharika Barik Singh 2, Sameer Vishnoi 12, Ritesh Kumar Agrawal 12, and Prabhat Malik 13, have managed its transition into a mature digital infrastructure provider. To support administrative operations and manage project-level execution, the state government instituted the cadre post of Chief Operating Officer (COO) within CHiPS.14 The COO post, held by IAS officers of the Senior Time Scale, is equivalent to a senior state administrative position and manages day-to-day operations.14 Kumar Biswranjan, an IAS officer of the 2020 batch, was appointed to this post.14
+CHiPS operates from its headquarters at the State Data Centre Building in Civil Lines, Raipur.10 The organization does not maintain traditional regional branch offices. Instead, it operates a hub-and-spoke model through the District e-Governance Manager (EDM) network.15 These EDMs are stationed at district collectorates across all districts in Chhattisgarh to oversee localized digital service delivery.15
+The technical operations of the society are executed through specialized divisions and wings:
+Infrastructure Wing: Manages the State Data Centre (SDC) and the Chhattisgarh State Wide Area Network (CG-SWAN).4
+Software and Application Development Division: Develops, migrates, and maintains citizen service portals and specialized departmental software applications.2
+Geographic Information System (GIS) Division: Manages spatial mapping datasets utilized by departments like Forestry, Mining, and Revenue.2
+Innovation and Incubation Division: Directly operates "36Inc," the state’s startup incubator and accelerator located in Raipur.18
+Finance and Accounts Division: Headed by a qualified Manager (Finance) 17, this wing manages balance sheets, audits, and compliance with public procurement norms.10
+Organizational, personnel, and role-mapping records are held by CHiPS within its Administration, Establishment, and HR departments. Except for personal data such as home addresses and private contact details (exempt under Section 8(1)(j)), all files concerning public posts, official directories, and technical divisions are fully disclosable.8
+3. Major Projects and Digital Governance Portfolios
+CHiPS has designed and implemented several landmark digital public infrastructure and software programs across Chhattisgarh.2 These projects range from foundational communication layers to unified citizen service portals:
+                           
+                                           │
+                    ┌──────────────────────┼──────────────────────┐
+                    ▼                      ▼                      ▼
+              [e-Procurement Portal]
+                    │                      │                      │
+                    └──────────────────────┼──────────────────────┘
+                                           ▼
+                           
+                                (MuleSoft / Salesforce)
+                                           │
+                    ┌──────────────────────┴──────────────────────┐
+                    ▼                                             ▼
+                            
+           - Application Tracking                         - Caste Certificates
+           - Scheme Registrations                         - Land Records / UPAHAR
+
+State Data Centre (SDC) & CGSDC 2.0
+The State Data Centre acts as the core hosting, security, and data consolidation environment for all e-governance systems in the state.6 CHiPS is currently implementing the "CGSDC 2.0" modernization project.19 Under this initiative, CHiPS manages the selection of a Master System Integrator (MSI) to upgrade the state’s data architecture to secure virtualized environments with automated disaster recovery systems.6
+State Wide Area Network (CG-SWAN)
+This project establishes high-speed, secure voice, data, and video communication lines connecting the state headquarters in Raipur down to district collectorates and block offices.2 The network is critical for real-time data access and secure administrative communication across the state’s remote regions.
+e-District Project
+A mission-mode initiative under the National e-Governance Plan, the e-District project automates departmental workflows, digitizes records, and delivers statutory certificates online.4 These include caste, income, and domicile certificates processed through localized administrative networks.
+CHOiCE (Chhattisgarh Online Information for Citizen Empowerment)
+This initiative set up localized citizen kiosk networks, particularly in rural and tribal districts, to provide access to public services without requiring citizens to travel to government offices.4
+Geographic Information System (GIS)
+CHiPS operates a centralized GIS lab that maps topographical, cadastral, and forestry data.4 This spatial database is utilized by departments like Mining and Urban Administration to plan infrastructure and monitor resource utilization.
+e-Procurement Portal
+CHiPS designed and maintains the centralized e-tendering and e-auction platform used by all government departments in Chhattisgarh.4 This platform handles vendor registration, digital signature certificate (DSC) verification, and secure bidding processes.5
+Unified Platform for Agriculture and Holistic Assessment (UPAHAR)
+Commissioned by the Director of Land Records, this project acts as an integrated system for studying, designing, and maintaining digitized agricultural records, land assessments, and crop monitoring across the state.22
+Khanij Online 2.0 (CHiMMS)
+This platform was developed on behalf of the Directorate of Geology and Mining.16 It acts as an end-to-end digital tracker for mining permits, royalty collections, transit passes, and mineral transport audits across the state's resource-rich belts.16
+Digital Dwaar
+A major modern initiative, Digital Dwaar is a secure, API-based data exchange platform developed with Salesforce and consulting partner Watsoo.13 Using MuleSoft integration technology, Digital Dwaar unifies over 130 active APIs across more than 25 departments.13 It eliminates data silos, allowing real-time, secure data validation and inter-departmental communication.13
+Sewa Setu Portal
+The official single-window platform of the Government of Chhattisgarh, Sewa Setu provides unified digital access to G2C welfare schemes.15 It allows citizens to register for services, track application status, and receive automated updates.15
+These project portfolios are held in the form of system design documents, contract agreements, project management files, and performance dashboards by the respective Project Management Units (PMUs) within CHiPS. While database structure files, active encryption keys, and system source codes are exempt under Section 8(1)(a) and 8(1)(d) to protect state digital security, all project agreements, work orders, service level agreements (SLAs), and project completion reports are fully open to public disclosure.
+4. Information Technology Infrastructure
+The digital architecture managed by CHiPS spans physical server farms, virtualized operating systems, storage networks, and cybersecurity frameworks.6
+State Data Centre Building
+CHiPS’s physical infrastructure is located within the State Data Centre Building in Civil Lines, Raipur.10 The facility hosts dedicated server racks, network termination endpoints, and centralized power distribution units.6
+Disaster Recovery and Storage Systems
+To prevent data loss from physical or technical failures, the data storage architecture includes high-capacity disk arrays consolidated at the State Data Centre, combined with secondary cloud hosting and automated disaster recovery (DR) sites.6 These systems run real-time replication routines to ensure business continuity for state applications.
+Network and Cyber Security
+The network is secured using bank-grade encryption protocols, such as OAuth 2.0, which protect the data pipelines of platforms like Digital Dwaar and Sewa Setu.25 Technical security audits are conducted in compliance with guidelines set by the Standardisation Testing and Quality Certification (STQC) Directorate and the Indian Computer Emergency Response Team (CERT-In).16
+Detailed infrastructure specifications, storage volumes, network maps, IP allocations, and firewall policies are held by the SDC Operations Team. This technical information is exempt under Section 8(1)(a) of the RTI Act, as disclosure of network topologies could compromise critical information infrastructure.27 However, general equipment counts, server procurement agreements, utility consumption records, and AMC performance reports are fully disclosable.
+5. Budget, Finance, and Resource Allocations
+CHiPS manages its financial operations through a combination of state grants, central government scheme funding, and department-specific project transfers.6 Under the state’s "SANKALP" budget, which focuses on digital governance and artificial intelligence missions, CHiPS receives dedicated state-level capital and operational expenditure grants.28
+Central government funds are received under programs like the National e-Governance Plan (NeGP) for infrastructure such as CG-SWAN and the State Data Centre.6 Respective departments also transfer project-specific allocations to CHiPS for customized software developments (such as Khanij Online 2.0 or UPAHAR).16
+The Finance Wing of CHiPS, overseen by the Manager (Finance), holds all financial files, budget registers, ledger books, and grant receipt records.17 These financial transactions do not fall under any exemption in Section 8 or 9 of the RTI Act. All ledger entries, project-wise disbursements, and grant utilization certificates are fully disclosable.
+6. Procurement, Tendering, and Contracting Operations
+CHiPS operates under public procurement norms, utilizing state-wide e-procurement systems to issue Requests for Proposals (RFPs).4 Contracts are structured around a standard two-stage bidding process to select technical partners, system integrators, and service providers.20
+The society's procurement portfolio includes contracts for the selection of a Master System Integrator (MSI) for CGSDC 2.0, agreements for Khanij Online 2.0, hardware and software acquisition for e-District, and specialized agreements for the empanelment of legal and Chartered Accountant (CA) firms to conduct audits and pre-audits.10
+These procurement registers, evaluated bid documents, draft contract agreements, and final work orders are held by the Tendering and Procurement Cell of CHiPS. While proprietary software licensing structures or trade secrets of private bidders are protected under Section 8(1)(d), final contract values, signed agreement copies, selected bid documents, and vendor payment histories must be disclosed under the RTI Act once a tender is awarded.
+7. Human Resource Management and Staffing Cadres
+The human resource matrix of CHiPS is a tripartite structure designed to deploy diverse technical and administrative skills.2
+                                [Governing Council]
+                                         │
+                                         ▼
+                            [Chief Executive Officer]
+                                         │
+         ┌───────────────────────────────┼───────────────────────────────┐
+         ▼                               ▼                               ▼
+                 
+  - IAS / State Cadres          - Technical Managers            - MSI Helpdesk Staff
+  - Ex-Officio Secretaries      - Manager (Finance)             - NOC Operators
+
+Government Deputation and Cadre Posts
+This layer consists of senior administrative leadership, including the CEO and COO, who are drawn from the IAS or Allied State Civil Services.1 Their roles are governed by standard service rules and deputation frameworks.
+Direct Contractual Employees
+This layer consists of specialized professional staff, such as the Manager (Finance) or technical leads, recruited directly by CHiPS under fixed-term employment contracts subject to CHiPS service rules.17
+Consultants and Outsourced Manpower
+This layer consists of subject-matter experts, legal firms, and technical operators deployed under managed service contracts.2 During the Operation and Maintenance phase of projects like CGSDC 2.0, the selected Master System Integrator deploys and manages technical teams (e.g., helpdesk operators, network administrators, and system security engineers) under the direct operational control of CHiPS.20
+HR files, vacancy details, payroll registers, recruitment guidelines, and service rules are held by the Human Resources and Establishment Department of CHiPS. Personal performance appraisals and individual bank details are exempt under Section 8(1)(j). However, recruitment notices, sanctioned and vacant post registers, consolidated compensation metrics, and standard contractual agreements are fully disclosable.
+8. Citizen Services Delivery and Operational Metrics
+CHiPS delivers public services primarily through digital single-window portals.6 The operational efficiency of projects like e-District and Sewa Setu is monitored through automated application registers.15 These databases track:
+Total applications received across various categories (e.g., certificates, permits, licenses).15
+Application disposal rates and service turnaround times based on departmental SLAs.6
+Current volumes of pending applications and backlogs, broken down by district, block, and department.15
+These service delivery metrics are stored as database records at the State Data Centre and on administrative portals. Under Section 8(1)(j), individual citizen details, uploaded documents, and personal identifiers are exempt from public disclosure to protect privacy. However, aggregate statistical tables, disposal rates, pending caseloads by district, and overall transactions are public records and must be disclosed under the RTI Act.
+9. Recent Technological Initiatives and Digital Reforms
+CHiPS continues to implement digital governance and industrial reforms across Chhattisgarh:
+Nava Raipur AI Data Centre Park
+This initiative is designed to support high-performance computing, advanced data analytics, and future AI-driven citizen services.13
+Semiconductor Industry Support
+To foster deep-tech manufacturing, CHiPS supported the establishment of a  Gallium Nitride (GaN) semiconductor manufacturing plant by Polymatech Electronics in Sector 5, Nava Raipur.29 This includes fast-tracking land allotment deeds and regulatory clearances.31
+Industrial Approvals and Deregulation
+CHiPS provides technical infrastructure for the state's "One Click" single-window clearance portal, which integrates over 130 approvals across 10 departments.29 This system supports the Chhattisgarh Jan Vishwas Act, 2025, which decriminalized minor regulatory offences to improve the ease of doing business.29
+MoUs, administrative notifications, land allocation deeds, and policy drafts are held by the CEO’s Office and the Strategic Planning Division of CHiPS. While unfinalized proprietary designs are exempt under Section 8(1)(d), final policy drafts, signed MoUs, and executive orders are disclosable.
+10. Audit, Compliance, and Security Oversight
+CHiPS is subject to strict financial and technical compliance audits to maintain operational security and fiscal accountability:
+Financial Audits
+The financial statements and transactions of the society are subject to internal audit and pre-audit by empaneled CA firms.10 Statutory financial audits are conducted by the Comptroller and Auditor General (CAG) of India, which issues audit reports and monitors Action Taken Reports (ATRs).9
+Technical and Security Audits
+State-level software platforms (such as Khanij Online 2.0 or Sewa Setu) undergo cybersecurity testing and vulnerability assessments.16 These audits ensure compliance with CERT-In and STQC security standards before deployment.16
+These audit files, CAG reports, ATRs on financial objections, and final security clearance certificates are held by the Finance and Technical divisions of CHiPS. Detailed vulnerability reports, penetration testing logs, and source code scans are exempt under Section 8(1)(a) to protect network security.27 Financial audit sheets, CAG audit paragraphs, and final security certifications must be disclosed.
+11. Right to Information Act Compliance Framework
+CHiPS maintains a structured RTI cell at its Raipur headquarters to process information requests.10 The society designates a Public Information Officer (PIO) to manage applications and a senior executive as the First Appellate Authority (FAA) to adjudicate appeals.19
+Under Section 4(1)(b) of the RTI Act, CHiPS is legally mandated to publish its seventeen proactive disclosure manuals, updating them annually.8 CHiPS must also maintain a central register of RTI applications received, disposal rates, and appeal logs.9
+RTI statistics, appeal registers, and proactive disclosure manuals are held by the RTI Cell of CHiPS. These compliance files are public records and are not subject to any exemptions under Section 8 or 9 of the RTI Act.
+12. Strategic RTI Query Optimization Framework
+To assist public disclosure officers, legal analysts, and citizens in navigating CHiPS's records, this section provides an optimized query strategy based on statutory disclosure mandates.
+RTI Query Optimization Matrix
+The following matrix lists precise, record-centric questions aligned with CHiPS's organizational and technical framework, indicating the custodian division, success probability, and applicable exemptions.
+13. Legally Defensible Inquiry Guidelines under the RTI Act
+To maximize the probability of information retrieval, queries must align with the statutory definitions of the RTI Act, 2005. Under the Act, a public authority is only required to supply existing records and cannot be forced to compile answers, justify decisions, or create new information.7
+                 ┌───────────────────────────────────────┐
+                 │         RTI Query Framing             │
+                 └───────────────────┬───────────────────┘
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           ▼                                                   ▼
+ ┌───────────────────────────────────┐               ┌───────────────────────────────────┐
+ │   REJECTED QUERY STRUCTURES       │               │   ACCEPTED QUERY STRUCTURES       │
+ │   - "Why was Project X delayed?"  │               │   - "Provide certified copy of..."│
+ │   - "Why did CHiPS select Y?"     │               │   - "Provide file notings of..."  │
+ │   - "Explain the reasons for..."  │               │   - "Provide SLA reports of..."   │
+ └─────────────────┬─────────────────┘               └─────────────────┬─────────────────┘
+                   │                                                   │
+                   ▼                                                   ▼
+                                                  Legally Compliant]
+
+High-Acceptance vs. Deflective Query Design
+This comparison illustrates how to restructure questions to ensure compliance with the RTI Act and prevent administrative rejection:
+Organization & HR
+Deflective Framing (Likely Rejected): Explain why CHiPS has failed to fill the vacant technical positions and what plans are in place to address this.
+Receptive Framing (High Success): Provide a certified copy of the staffing register, office orders, and recruitment rules detailing sanctioned and vacant positions in CHiPS.
+Project Approvals
+Deflective Framing (Likely Rejected): Why did CHiPS approve the transition of Khanij Online to the 2.0 version, and what was the CEO’s opinion on the change?
+Receptive Framing (High Success): Provide a certified copy of the project approval file, including all file notings, board minutes, and the approved Detailed Project Report (DPR) for Khanij Online 2.0.16
+Procurement & Contracting
+Deflective Framing (Likely Rejected): Why was a Chennai-based firm selected for the semiconductor plant in Nava Raipur instead of a local enterprise?
+Receptive Framing (High Success): Provide a certified copy of the land allotment tender files, bid evaluation reports, and the registered lease deed signed with Polymatech Electronics.31
+Performance & SLAs
+Deflective Framing (Likely Rejected): Why did the e-District application fail to meet its service delivery timeline for citizens in remote districts last month?
+Receptive Framing (High Success): Provide a certified copy of the monthly SLA compliance and server uptime report for the e-District application database.6
+Financial Disbursements
+Deflective Framing (Likely Rejected): Explain how CHiPS spent the central e-governance grants and why certain departments received larger allocations than others.
+Receptive Framing (High Success): Provide a certified copy of the ledger account, grant utilization certificates, and project-wise disbursement statements for central funds received in the last three financial years.6
+The Golden Rule of RTI Framing
+When drafting information requests for CHiPS, the core query must always be structured to seek specific, existing documents rather than explanations:
+"Provide a certified copy of the record, file noting, agreement, work order, report, or executive instruction maintained by CHiPS concerning."
+By using this format, the information seeker requests physical or digital files that are legally held by the public authority under Section 2(j) of the RTI Act.7 This framing bypasses standard administrative deflections, preventing the public authority from claiming that the application requires the creation of new information or the expression of official opinions.27
+Works cited
+GOVERNMENT OF CHHATTISGARH DEPARTMENT ... - India Code, accessed June 1, 2026, https://www.indiacode.nic.in/ViewFileUploaded?path=AC_CG_61_1375_00003_00003_1594717497353/orderindividualfile/&file=order_of_governing_council_of_cg_infotech_promotion_society_registered_at_raipur_date_23.01.2001.pdf
+Chhattisgarh Infotech Promotion Society (CHiPS) Beneficiary Oriented Solution - State, accessed June 1, 2026, https://negd.gov.in/isl/Directory/statedata/583
+Chhattisgarh Infotech Promotion Society | National Government Services Portal, accessed June 1, 2026, https://services.india.gov.in/service/detail/chhattisgarh-chhattisgarh-infotech-promotion-society-1
+Website of Chhattisgarh Infotech Promotion Society (CHiPS) | Information Technology | Science, IT & Communication | Category | National Portal of India, accessed June 1, 2026, https://xn--3rcj3fqcyde.xn--nsc7cb3a6a.xn--2scrj9c/category/science-it-communication/subcategory/information-technology/details/website-of-chhattisgarh-infotech-promotion-society-chips
+About the Chhattisgarh Infotech Promotion Society (CHiPS) - Unacademy, accessed June 1, 2026, https://unacademy.com/content/bank-exam/study-material/general-awareness/chhattisgarh-infotech-promotion-society/
+Marching Ahead in SDC Implementation : Anand Mohan Parial, Additional CEO, Chhattisgarh infotech Promotion Society, Chhattisgarh - eGov Magazine, accessed June 1, 2026, https://egov.eletsonline.com/2009/12/marching-ahead-in-sdc-implementation-anand-mohan-parial-additional-ceo-chhattisgarh-infotech-promotion-society-chhattisgarh-2/
+Background and Introduction of Right to Information DRTI/CRTI-101 - Uttarakhand Open University, accessed June 1, 2026, https://uou.ac.in/sites/default/files/slm/CRTI-101.pdf
+RTI Section 4 Proactive Disclosure: What the Government Must Publish Suo Motu, accessed June 1, 2026, https://rtisathi.com/blogs/rti-section-4-proactive-disclosure
+Suo Motu Disclosures/Section 4 Disclosures | Department of Empowerment of Persons with Disabilities (DEPwD) | India, accessed June 1, 2026, https://depwd.gov.in/en/proactive-disclosure/
+Corrigendum/Clarification Request for proposal for Empanelment of CA Firms Chhattisgarh infotech Promotion Society (CHiPS) Email - ::PDICAI::, accessed June 1, 2026, https://www.pdicai.org/Docs/Corrigendum-Chhattisgarh-infotech-Promotion-Society_2152025123534789.pdf
+Organization Details : MyGov Chhattisgarh - Integrated Government Online Directory, accessed June 1, 2026, https://igod.gov.in/organization/ifMvDHwBnAUp6yMB5N72
+Chhattisgarh names IAS officer Ritesh Kumar Agrawal as new CHiPS CEO following Sameer Vishnoi's arrest - ET Government, accessed June 1, 2026, https://government.economictimes.indiatimes.com/news/governance/chhattisgarh-names-ias-officer-ritesh-kumar-agrawal-as-new-chips-ceo-following-sameer-vishnois-arrest/95013917
+CHiPS and Salesforce launch Digital Dwaar for API-led governance in Chhattisgarh, accessed June 1, 2026, https://www.dqindia.com/news/chips-and-salesforce-launch-digital-dwaar-for-api-led-governance-in-chhattisgarh-11886009
+Kumar Biswranjan appointed COO, CHIPS in Chhattisgarh || Whispersinthecorridors, accessed June 1, 2026, https://whispersinthecorridors.in/detail/128290-Kumar%2BBiswranjan%2Bappointed%2BCOO,%2BCHIPS%2Bin%2BChhattisgarh.html
+Contact Us - || Sewa Setu || - Government of Chhattisgarh, accessed June 1, 2026, https://sewasetu.cgstate.gov.in/redirectPage1.do?pageName=contact&lang=en
+Request for Proposal for Selection of System Integrator for Ensuring Continuity of Khanij Online (CHiMMS) Application and Design, accessed June 1, 2026, https://cdn.indiastacklocal.in/assets/uploads/67e4f6abdb137rfp-khanij-online-2-vol-1.pdf
+CHiPS Recruitment , Sarkari Naukri In Chhattisgarh Infotech Promotion Society, accessed June 1, 2026, https://www.sarkari-naukri.in/chips/
+SKYHack 2018 - 36Inc, accessed June 1, 2026, https://36inc.in/SKYHack/tc.php
+Request for Proposal for Selection of Master System Integrator (MSI) for CGSDC2.0 Project in the State of Chhattisgarh - India Stack Local, accessed June 1, 2026, https://cdn.indiastacklocal.in/assets/uploads/67e4f7e1d3797final-draft-of-cgsdc-rfp_incorporating-legal-changes-v0.1-23.10.24.pdf
+RFP for Master System Integrator in Chhattisgarh | PDF | Limited Liability Partnership | Data Center - Scribd, accessed June 1, 2026, https://www.scribd.com/document/797062746/Synopsis-Chips-Msi-Cgsdc2-0
+E-Government Mission Mode Projects (Mmps) In India - IJCRT.org, accessed June 1, 2026, https://www.ijcrt.org/papers/IJCRT21X0364.pdf
+Unified Platform for Agriculture and Holistic Assessment with Records (UPAHAR) - Chhattisgarh Revenue and Disaster Management Dept, accessed June 1, 2026, https://revenue.cg.nic.in/NoticeforInvitingTender(NIT)ANDRFPunderUPAHAR.pdf
+CHiPS Collaborates with Salesforce to Power Chhattisgarh's Digital Dwaar, Transforming Connected, Citizen-Centric Digital Governance, accessed June 1, 2026, https://www.salesforce.com/in/news/press-releases/2026/05/29/chhattisgarh-infotech-promotion-society-deploy-mulesoft-digital-dwaar-api-platform/
+Chhattisgarh partners Salesforce to build unified governance platform 'Digital Dwaar, accessed June 1, 2026, https://www.techcircle.in/2026/05/29/chhattisgarh-partners-salesforce-to-build-unified-governance-platform-digital-dwaar
+Digital Dwaar, accessed June 1, 2026, https://chips.watsoo.com/
+Track application status - || Sewa Setu || - Government of Chhattisgarh, accessed June 1, 2026, https://sewasetu.cgstate.gov.in/workflow/trackAppStatus.html?lang=en
+CPIO & First Appellate Authority RTI Matters - NSC, accessed June 1, 2026, https://nsc.mospi.gov.in/rti
+Chhattisgarh's 'SANKALP' budget eyes on tribal belt of Bastar-Surguja, FM blends welfare, infra push | Raipur News - The Times of India, accessed June 1, 2026, https://timesofindia.indiatimes.com/city/raipur/chhattisgarhs-sankalp-budget-eyes-on-tribal-belt-of-bastar-surguja-fm-blends-welfare-infra-push/articleshow/128767929.cms
+'We are not a saturated market': Chhattisgarh CM bets big on chips, AI and manufacturing, accessed June 1, 2026, https://manufacturing.economictimes.indiatimes.com/news/hi-tech/we-are-not-a-saturated-market-chhattisgarh-cm-bets-big-on-chips-ai-and-manufacturing/131197598?utm_source=top_news&utm_medium=sectionListing
+India's first AI-based Data Center Park in Nava Raipur | DD India - YouTube, accessed June 1, 2026, https://www.youtube.com/watch?v=D5AhD-WjqP4
+Chhattisgarh CM lays foundation stone for semiconductor manufacturing unit | Industry News - Business Standard, accessed June 1, 2026, https://www.business-standard.com/industry/news/chhattisgarh-cm-lays-foundation-stone-for-semiconductor-manufacturing-unit-125041300385_1.html
+Chhattisgarh to get semiconductor plant; GaN chips to power 5G, 6G from Nava Raipur, accessed June 1, 2026, https://m.economictimes.com/industry/cons-products/electronics/chhattisgarh-to-get-semiconductor-plant-gan-chips-to-power-5g-6g-from-nava-raipur/articleshow/120164033.cms
+Chhattisgarh set to host its first semiconductor plant, paving the way for 5G and 6G advancements | Raipur News - The Times of India, accessed June 1, 2026, https://timesofindia.indiatimes.com/city/raipur/chhattisgarh-set-to-host-its-first-semiconductor-plant-paving-the-way-for-5g-and-6g-advancements/articleshow/120133446.cms
+FIRST APPEAL & APPELLATE AUTHORITY - E-Magazine....::, accessed June 1, 2026, https://magazines.odisha.gov.in/orissareview/nov-2006/engpdf/69-71.pdf
+FORMAT OF PROACTIVE DISCLOSURE UNDER SECTION 4 OF THE RTI ACT. (i) Name and address of the Fully Met 1 The particulars of organi, accessed June 1, 2026, https://www.sikkim.gov.in/uploads/DeptUploads/PROACTIVE_DISCLOSURE_UNDER_SECTION_4_OF_THE_RTI_ACT_20230819.pdf

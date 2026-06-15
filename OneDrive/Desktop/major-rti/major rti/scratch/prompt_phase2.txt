@@ -1,0 +1,1167 @@
+RTI INTELLIGENCE SYSTEM — CHIPS
+Implementation Prompt
+Production-Grade Developer Instructions for All 4 Upgrade Modules
+Copy this prompt directly into your AI coding assistant or developer handoff. Version 1.0
+
+
+MASTER IMPLEMENTATION PROMPT
+Copy everything below this line and give it to your developer / AI coding assistant.
+
+ROLE AND SYSTEM CONTEXT
+ 
+EXISTING APP STRUCTURE YOU ARE MODIFYING
+The existing app has this structure. Do not break any of it:
+ 
+NEW FILE STRUCTURE TO CREATE
+Create all new files in this exact structure:
+
+MODULE 0: INPUT PARSING (IMPLEMENT FIRST)
+ 
+File: utils/document_parser.py
+Create this file with the following complete implementation:
+ 
+Modifications to app.py — Step 1 Input Section
+Replace the existing text input in Step 1 with this upload-aware version:
+
+MODULE 0B: ROUTING CORRECTION + CHIPS GATING
+ 
+New Session State Variables Required
+ 
+New Routing Correction UI — Add to Step 1 After Routing Result
+ 
+Modify Step 2 and Step 3 to Respect Jurisdiction Gate
+
+MODULE 1: AUDIT LOGGER (utils/audit_logger.py)
+This module must be implemented before the PIO decision UI. Every other module calls it.
+
+MODULE 2: AUTOFIELD BUTTON (PIO DECISION AREA)
+Modify Step 3 — PIO Decision Entry Section
+Find the existing PIO Decision Entry section in Step 3 and replace it with this:
+ 
+Helper Function: _generate_pio_draft()
+Add this function in app.py or utils/llm.py:
+
+MODULE 3: RTI ACT REFERENCE PAGE (pages/rti_reference.py)
+Create pages/rti_reference.py
+
+MODULE 4: AI ANALYSIS EXPORT (utils/export_report.py)
+
+MODULE 5: OFFICIAL RESPONSE LETTER GENERATOR
+utils/response_letter.py
+
+MODULE 6: NAVIGATION + CASE ID + SESSION INIT
+Add to top of app.py
+
+DEPENDENCIES — requirements.txt ADDITIONS
+
+IMPLEMENTATION ORDER — DO NOT SKIP STEPS
+
+ACCEPTANCE CRITERIA
+
+
+=== TABLES ===
+
+--- Table 1 ---
+HOW TO USE THIS DOCUMENT
+This document is a complete, copy-paste-ready developer prompt for implementing
+all 4 upgrade modules on your existing CHiPS RTI Intelligence System.
+
+Give the entire prompt verbatim to Claude, Cursor, or your developer.
+Each section is self-contained but they must be implemented in order.
+Do not skip the file structure section — it defines where everything lives.
+The prompt assumes your existing app is in app.py with the 3-step workflow.
+
+--- Table 2 ---
+Paste This As System Prompt / Role
+You are a senior full-stack Python engineer specializing in Streamlit and LLM applications
+for government workflows. You are implementing upgrades to an existing RTI Intelligence
+System built for CHiPS (Chhattisgarh Infotech Promotion Society).
+
+CRITICAL CONSTRAINTS that override all other instructions:
+1. This system supports legal decisions. Every AI output is ADVISORY ONLY.
+2. No AI output is ever auto-submitted, auto-executed, or displayed as a final decision.
+3. Every AI draft must be explicitly labeled 'AI-Generated Draft — Review Required'.
+4. Every PIO action must be explicitly confirmed by the officer before finalizing.
+5. All original AI drafts, PIO edits, and final approved versions must be stored separately.
+6. The audit log is append-only. No delete operation is permitted on audit records.
+7. OCR confidence < 85% must block processing and require manual review.
+8. Department routing for non-CHiPS applications must NOT trigger exemption analysis.
+
+--- Table 3 ---
+app.py                          # Main Streamlit app
+├── Page: RTI Analysis          # 3-step workflow (DO NOT BREAK)
+│   ├── Step 1: Input & Routing
+│   ├── Step 2: Information Extraction Verification
+│   └── Step 3: Exemption Rules & Decision
+├── Page: System Status         # Existing status page
+utils/
+│   ├── llm.py                  # LLM call helpers
+│   ├── rag.py                  # RAG retrieval helpers
+│   └── routing.py              # Department routing logic
+data/
+│   ├── rti_act.pdf             # RTI Act + CG rules PDF
+│   └── department_map.json     # Department jurisdiction map
+
+--- Table 4 ---
+app.py                          # Modified — add new pages and features
+utils/
+│   ├── llm.py                  # Existing — do not modify
+│   ├── rag.py                  # Existing — do not modify
+│   ├── routing.py              # Existing — do not modify
+│   ├── document_parser.py      # NEW — PDF/DOCX/image OCR parsing
+│   ├── export_report.py        # NEW — PDF + DOCX report generation
+│   ├── response_letter.py      # NEW — Official RTI response letter generator
+│   ├── audit_logger.py         # NEW — Append-only audit trail
+│   └── legal_sections.py       # NEW — RTI Act section data for reference page
+pages/
+│   └── rti_reference.py        # NEW — RTI Act Reference page (Streamlit page)
+data/
+│   ├── rti_act.pdf             # Existing
+│   ├── department_map.json     # Existing
+│   └── legal_sections.json     # NEW — Pre-extracted section data
+audit_log/                      # NEW — Created at runtime
+│   └── YYYY-MM-DD/             # Date-partitioned audit records
+│       └── {case_id}.json      # One file per RTI case
+templates/
+│   └── rti_response_template.json  # NEW — Letter template structure
+
+--- Table 5 ---
+Implement This Before Any Other Module
+The existing app likely uses st.text_area for RTI input.
+This module adds PDF, DOCX, and image upload support.
+All downstream modules depend on clean extracted text.
+OCR confidence gating must be enforced here — not in the LLM layer.
+
+--- Table 6 ---
+import streamlit as st
+import pytesseract
+from PIL import Image
+import fitz  # PyMuPDF
+import docx
+import io
+import os
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class ParseResult:
+    text: str
+    source_type: str          # 'pdf' | 'docx' | 'image' | 'text'
+    ocr_confidence: float     # 0.0 to 1.0; 1.0 for native text
+    page_count: int
+    language_detected: str    # 'en' | 'hi' | 'mixed'
+    raw_file_stored: bool     # True if original stored for audit
+    warning: Optional[str]    # Non-None if quality issues found
+
+
+def parse_uploaded_file(uploaded_file) -> ParseResult:
+    """
+    Main entry point. Accepts Streamlit UploadedFile object.
+    Returns ParseResult with extracted text and metadata.
+    CRITICAL: Returns warning if OCR confidence < 0.85.
+    """
+    ext = uploaded_file.name.lower().split('.')[-1]
+    file_bytes = uploaded_file.read()
+
+    if ext == 'pdf':
+        return _parse_pdf(file_bytes, uploaded_file.name)
+    elif ext in ('docx', 'doc'):
+        return _parse_docx(file_bytes, uploaded_file.name)
+    elif ext in ('png', 'jpg', 'jpeg', 'tiff', 'bmp'):
+        return _parse_image(file_bytes, uploaded_file.name)
+    else:
+        return ParseResult(
+            text='', source_type='unknown', ocr_confidence=0.0,
+            page_count=0, language_detected='unknown',
+            raw_file_stored=False,
+            warning=f'Unsupported file type: {ext}'
+        )
+
+
+def _parse_pdf(file_bytes: bytes, filename: str) -> ParseResult:
+    """
+    Extract text from PDF. Two-pass strategy:
+    Pass 1: Native text extraction (PyMuPDF)
+    Pass 2: OCR fallback if native text is sparse (< 50 chars/page)
+    """
+    doc = fitz.open(stream=file_bytes, filetype='pdf')
+    pages = []
+    ocr_pages = 0
+    native_pages = 0
+
+    for page in doc:
+        native_text = page.get_text().strip()
+        if len(native_text) > 50:  # Native text present
+            pages.append(native_text)
+            native_pages += 1
+        else:  # Scanned page — use OCR
+            pix = page.get_pixmap(dpi=300)
+            img = Image.frombytes('RGB', [pix.width, pix.height], pix.samples)
+            ocr_data = pytesseract.image_to_data(
+                img, lang='hin+eng',
+                output_type=pytesseract.Output.DICT
+            )
+            conf_scores = [int(c) for c in ocr_data['conf'] if str(c).isdigit() and int(c) > 0]
+            avg_conf = sum(conf_scores) / len(conf_scores) if conf_scores else 0
+            text = pytesseract.image_to_string(img, lang='hin+eng')
+            pages.append(f'[OCR Page {page.number+1}, conf={avg_conf:.0f}%]\n{text}')
+            ocr_pages += 1
+
+    full_text = '\n\n'.join(pages)
+    total_pages = len(doc)
+    ocr_confidence = 1.0 if ocr_pages == 0 else (native_pages / total_pages)
+    warning = None
+    if ocr_confidence < 0.85:
+        warning = (
+            f'OCR quality warning: {ocr_pages} of {total_pages} pages required OCR. '
+            f'Confidence: {ocr_confidence:.0%}. Manual review of extracted text recommended.'
+        )
+    lang = _detect_language(full_text)
+    return ParseResult(
+        text=full_text, source_type='pdf', ocr_confidence=ocr_confidence,
+        page_count=total_pages, language_detected=lang,
+        raw_file_stored=False, warning=warning
+    )
+
+
+def _parse_docx(file_bytes: bytes, filename: str) -> ParseResult:
+    """Extract text from DOCX/DOC. Native text, no OCR needed."""
+    doc = docx.Document(io.BytesIO(file_bytes))
+    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+    full_text = '\n'.join(paragraphs)
+    lang = _detect_language(full_text)
+    return ParseResult(
+        text=full_text, source_type='docx', ocr_confidence=1.0,
+        page_count=1, language_detected=lang,
+        raw_file_stored=False, warning=None
+    )
+
+
+def _parse_image(file_bytes: bytes, filename: str) -> ParseResult:
+    """OCR on standalone image file."""
+    img = Image.open(io.BytesIO(file_bytes))
+    ocr_data = pytesseract.image_to_data(
+        img, lang='hin+eng', output_type=pytesseract.Output.DICT
+    )
+    conf_scores = [int(c) for c in ocr_data['conf'] if str(c).isdigit() and int(c) > 0]
+    avg_conf = (sum(conf_scores) / len(conf_scores) / 100) if conf_scores else 0.0
+    text = pytesseract.image_to_string(img, lang='hin+eng')
+    warning = None
+    if avg_conf < 0.85:
+        warning = f'Low OCR confidence: {avg_conf:.0%}. Manual verification required.'
+    lang = _detect_language(text)
+    return ParseResult(
+        text=text, source_type='image', ocr_confidence=avg_conf,
+        page_count=1, language_detected=lang,
+        raw_file_stored=False, warning=warning
+    )
+
+
+def _detect_language(text: str) -> str:
+    """Simple Devanagari character detection for Hindi vs English."""
+    devanagari = sum(1 for c in text if '\u0900' <= c <= '\u097F')
+    ascii_alpha = sum(1 for c in text if c.isalpha() and c.isascii())
+    total = devanagari + ascii_alpha
+    if total == 0:
+        return 'unknown'
+    ratio = devanagari / total
+    if ratio > 0.6:
+        return 'hi'
+    elif ratio > 0.2:
+        return 'mixed'
+    return 'en'
+
+--- Table 7 ---
+# At top of app.py, add import:
+from utils.document_parser import parse_uploaded_file, ParseResult
+
+# In Step 1 UI section, replace text_area with:
+st.subheader('RTI Application Input')
+input_method = st.radio(
+    'Input method:',
+    ['Paste Text', 'Upload File (PDF / DOCX / Image)'],
+    horizontal=True
+)
+
+rti_text = ''
+parse_result = None
+
+if input_method == 'Paste Text':
+    rti_text = st.text_area('Paste RTI application text here:', height=200)
+
+else:
+    uploaded = st.file_uploader(
+        'Upload RTI application',
+        type=['pdf', 'docx', 'doc', 'png', 'jpg', 'jpeg', 'tiff']
+    )
+    if uploaded:
+        with st.spinner('Extracting text...'):
+            parse_result = parse_uploaded_file(uploaded)
+            rti_text = parse_result.text
+
+        # Show parse metadata
+        col1, col2, col3 = st.columns(3)
+        col1.metric('Source Type', parse_result.source_type.upper())
+        col2.metric('Language', parse_result.language_detected.upper())
+        col3.metric('OCR Confidence', f'{parse_result.ocr_confidence:.0%}')
+
+        # CRITICAL: OCR confidence gate
+        if parse_result.warning:
+            st.warning(f'⚠️ {parse_result.warning}')
+            if parse_result.ocr_confidence < 0.85:
+                st.error('Processing blocked: OCR confidence too low. Please verify extracted text manually before proceeding.')
+                with st.expander('View extracted text for manual correction'):
+                    rti_text = st.text_area('Correct extracted text:', value=rti_text, height=300)
+                    st.caption('Edit the text above to fix OCR errors before proceeding.')
+
+        # Always show extracted text for verification
+        with st.expander('Verify extracted text', expanded=False):
+            st.text_area('Extracted text:', value=rti_text, height=200, disabled=True)
+
+# Store in session state for downstream use
+st.session_state['rti_text'] = rti_text
+st.session_state['parse_result'] = parse_result
+
+--- Table 8 ---
+The Most Critical Logic Gate in the System
+Your existing routing may pass ALL RTIs to exemption analysis.
+This is wrong. Exemption analysis should ONLY run for CHiPS-jurisdiction RTIs.
+For non-CHiPS RTIs, the output is: 'Transfer to [Department] under Section 6(3)'.
+No exemption analysis. No disclosure decision. Just routing + transfer recommendation.
+
+Additionally: the PIO must be able to CORRECT the routing prediction.
+This correction must be logged as training data with the reason.
+
+--- Table 9 ---
+# Add these to session state in Step 1:
+st.session_state['routing_result'] = None       # AI routing prediction
+st.session_state['pio_routing_override'] = None # PIO correction if any
+st.session_state['is_chips_jurisdiction'] = False  # The gating variable
+st.session_state['routing_correction_reason'] = '' # Reason for correction
+
+--- Table 10 ---
+# After displaying AI routing recommendation, add:
+st.divider()
+st.subheader('🔀 Routing Verification')
+
+routing_result = st.session_state.get('routing_result', {})
+predicted_dept = routing_result.get('department', 'Unknown')
+predicted_conf = routing_result.get('confidence', 'LOW')
+
+st.info(f'AI Routing Prediction: **{predicted_dept}** (Confidence: {predicted_conf})')
+
+# PIO routing correction field
+routing_correct = st.radio(
+    'Is this routing correct?',
+    ['Yes — proceed with AI recommendation', 'No — I will correct the department'],
+    key='routing_correct_radio'
+)
+
+if routing_correct.startswith('No'):
+    col1, col2 = st.columns([2, 3])
+    with col1:
+        # Load from department_map.json
+        dept_options = load_department_list()  # helper — reads department_map.json
+        corrected_dept = st.selectbox('Correct department:', dept_options)
+    with col2:
+        correction_reason = st.text_area(
+            'Reason for correction (required for training data):',
+            placeholder='e.g. This RTI is about e-district portal which is under CHiPS, not Revenue',
+            height=80
+        )
+    st.session_state['pio_routing_override'] = corrected_dept
+    st.session_state['routing_correction_reason'] = correction_reason
+    effective_dept = corrected_dept
+    st.warning('⚠️ AI-Generated Draft — Review Required: Routing overridden by PIO.')
+else:
+    effective_dept = predicted_dept
+
+# CHIPS JURISDICTION GATE — the single most important variable
+CHIPS_KEYWORDS = ['CHiPS', 'e-District', 'SWADES', 'NIC', 'IT infrastructure',
+                  'portal', 'e-governance', 'chhattisgarh infotech']
+is_chips = any(k.lower() in effective_dept.lower() for k in CHIPS_KEYWORDS)
+is_chips = is_chips or effective_dept.strip().upper() in ['CHIPS', 'CHIPS - CHHATTISGARH']
+st.session_state['is_chips_jurisdiction'] = is_chips
+st.session_state['effective_department'] = effective_dept
+
+if not is_chips:
+    st.info(f'ℹ️ This RTI is routed to **{effective_dept}**, not CHiPS. '
+            f'Exemption analysis will be skipped. Recommend Section 6(3) transfer.')
+
+# Log routing decision to audit trail
+from utils.audit_logger import log_routing_decision
+log_routing_decision(
+    case_id=st.session_state['case_id'],
+    ai_prediction=predicted_dept,
+    pio_override=st.session_state.get('pio_routing_override'),
+    correction_reason=st.session_state.get('routing_correction_reason', ''),
+    effective_department=effective_dept,
+    is_chips=is_chips
+)
+
+--- Table 11 ---
+# At the start of Step 2 (Information Extraction):
+if not st.session_state.get('is_chips_jurisdiction', False):
+    st.info('Step 2 skipped: This RTI is not within CHiPS jurisdiction.')
+    st.info(f"Recommendation: Transfer to {st.session_state.get('effective_department')} under Section 6(3).")
+    st.stop()  # OR use st.session_state to conditionally show steps
+
+# At the start of Step 3 (Exemption Analysis):
+if not st.session_state.get('is_chips_jurisdiction', False):
+    st.info('Step 3 skipped: Exemption analysis only applies to CHiPS-jurisdiction RTIs.')
+    st.stop()
+
+--- Table 12 ---
+import json
+import os
+import hashlib
+from datetime import datetime
+from pathlib import Path
+from typing import Optional, Dict, Any
+
+AUDIT_BASE_DIR = Path('audit_log')
+
+
+def _get_case_file(case_id: str) -> Path:
+    date_dir = AUDIT_BASE_DIR / datetime.now().strftime('%Y-%m-%d')
+    date_dir.mkdir(parents=True, exist_ok=True)
+    return date_dir / f'{case_id}.json'
+
+
+def _load_case(case_id: str) -> dict:
+    path = _get_case_file(case_id)
+    if path.exists():
+        return json.loads(path.read_text(encoding='utf-8'))
+    return {'case_id': case_id, 'created_at': datetime.now().isoformat(), 'events': []}
+
+
+def _save_case(case_id: str, data: dict):
+    """Append-only: never removes events already stored."""
+    path = _get_case_file(case_id)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
+def _append_event(case_id: str, event_type: str, payload: Dict[str, Any]):
+    case = _load_case(case_id)
+    event = {
+        'event_type': event_type,
+        'timestamp': datetime.now().isoformat(),
+        'payload': payload
+    }
+    # Hash the payload for integrity verification
+    event['hash'] = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()[:16]
+    case['events'].append(event)
+    _save_case(case_id, case)
+
+
+# Public API — one function per event type
+
+def log_rti_input(case_id: str, rti_text: str, source_type: str, ocr_confidence: float, language: str):
+    _append_event(case_id, 'RTI_INPUT', {
+        'rti_text_preview': rti_text[:500],
+        'rti_text_length': len(rti_text),
+        'source_type': source_type,
+        'ocr_confidence': ocr_confidence,
+        'language_detected': language
+    })
+
+
+def log_routing_decision(case_id: str, ai_prediction: str, pio_override: Optional[str],
+                         correction_reason: str, effective_department: str, is_chips: bool):
+    _append_event(case_id, 'ROUTING_DECISION', {
+        'ai_prediction': ai_prediction,
+        'pio_override': pio_override,
+        'override_reason': correction_reason,
+        'effective_department': effective_department,
+        'is_chips_jurisdiction': is_chips,
+        'training_data_flag': pio_override is not None  # Flag for future training
+    })
+
+
+def log_exemption_analysis(case_id: str, ai_analysis: dict, sections_applied: list):
+    _append_event(case_id, 'EXEMPTION_ANALYSIS', {
+        'ai_analysis_summary': ai_analysis,
+        'sections_applied': sections_applied
+    })
+
+
+def log_pio_decision(case_id: str, ai_draft: str, pio_edited_text: str,
+                     final_decision: str, pio_notes: str):
+    """
+    CRITICAL: Stores all 3 versions separately.
+    ai_draft: what the LLM generated
+    pio_edited_text: what the PIO typed / edited before finalizing
+    final_decision: the confirmed final decision
+    """
+    _append_event(case_id, 'PIO_DECISION', {
+        'ai_draft_original': ai_draft,
+        'pio_edited_version': pio_edited_text,
+        'final_approved_decision': final_decision,
+        'pio_notes': pio_notes,
+        'was_ai_draft_modified': ai_draft.strip() != pio_edited_text.strip()
+    })
+
+
+def log_response_letter_generated(case_id: str, letter_text: str, export_format: str):
+    _append_event(case_id, 'RESPONSE_LETTER_GENERATED', {
+        'letter_preview': letter_text[:500],
+        'export_format': export_format,
+        'generated_at': datetime.now().isoformat()
+    })
+
+
+def export_training_data(output_path: str = 'training_data/corrections.jsonl'):
+    """
+    Exports all PIO corrections as JSONL for future model fine-tuning.
+    Only exports events where pio_override is not None (actual corrections).
+    """
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    records = []
+    for date_dir in sorted(AUDIT_BASE_DIR.iterdir()):
+        for case_file in date_dir.glob('*.json'):
+            case = json.loads(case_file.read_text(encoding='utf-8'))
+            routing_events = [e for e in case['events'] if e['event_type'] == 'ROUTING_DECISION']
+            pio_events = [e for e in case['events'] if e['event_type'] == 'PIO_DECISION']
+            input_events = [e for e in case['events'] if e['event_type'] == 'RTI_INPUT']
+            if routing_events and routing_events[0]['payload'].get('training_data_flag'):
+                record = {
+                    'case_id': case['case_id'],
+                    'rti_text_preview': input_events[0]['payload']['rti_text_preview'] if input_events else '',
+                    'ai_routing': routing_events[0]['payload']['ai_prediction'],
+                    'correct_routing': routing_events[0]['payload']['effective_department'],
+                    'correction_reason': routing_events[0]['payload']['override_reason'],
+                    'pio_final_decision': pio_events[0]['payload']['final_approved_decision'] if pio_events else '',
+                }
+                records.append(json.dumps(record, ensure_ascii=False))
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(records))
+    return len(records)
+
+--- Table 13 ---
+# In Step 3, PIO Decision Entry section:
+st.subheader('PIO Decision Entry')
+st.caption('AI outputs above are advisory only. The PIO is the final decision-maker.')
+
+# Autofield button
+col_auto, col_clear = st.columns([2, 1])
+with col_auto:
+    autofield_btn = st.button(
+        '✍️ Autofield — Draft PIO Response',
+        help='AI will draft a response based on analysis above. You can edit it.',
+        type='secondary'
+    )
+with col_clear:
+    if st.button('Clear Draft', type='secondary'):
+        st.session_state['pio_decision_text'] = ''
+        st.session_state['autofield_used'] = False
+
+# Generate draft when button clicked
+if autofield_btn:
+    with st.spinner('Drafting PIO response...'):
+        draft = _generate_pio_draft()  # See function below
+        st.session_state['pio_decision_text'] = draft
+        st.session_state['autofield_used'] = True
+        st.session_state['ai_draft_original'] = draft  # Store for audit
+
+# Show AI-generated label if Autofield was used
+if st.session_state.get('autofield_used', False):
+    st.warning('⚠️ AI-Generated Draft — Review and Edit Before Finalizing')
+
+# Editable text area — always editable
+pio_text = st.text_area(
+    'PIO Decision / Reasoning:',
+    value=st.session_state.get('pio_decision_text', ''),
+    height=250,
+    key='pio_decision_textarea',
+    placeholder='Enter PIO reasoning and decision here, or use Autofield to generate a draft.'
+)
+st.session_state['pio_decision_text'] = pio_text
+
+# Final decision dropdown
+final_decision = st.selectbox(
+    'Final Decision:',
+    ['-- Select Decision --', 'Approve — Full Disclosure',
+     'Partially Approve — Partial Disclosure', 'Reject — Exempt',
+     'Transfer — Section 6(3)', 'Pending — Further Review Required'],
+    key='final_decision_select'
+)
+
+# Confirm and log
+if st.button('✅ Confirm and Finalize Decision', type='primary'):
+    if final_decision == '-- Select Decision --':
+        st.error('Please select a final decision before confirming.')
+    elif not pio_text.strip():
+        st.error('Please enter decision reasoning before confirming.')
+    else:
+        from utils.audit_logger import log_pio_decision
+        log_pio_decision(
+            case_id=st.session_state['case_id'],
+            ai_draft=st.session_state.get('ai_draft_original', ''),
+            pio_edited_text=pio_text,
+            final_decision=final_decision,
+            pio_notes=''
+        )
+        st.session_state['decision_finalized'] = True
+        st.session_state['final_decision_value'] = final_decision
+        st.success(f'Decision recorded: {final_decision}')
+
+--- Table 14 ---
+def _generate_pio_draft() -> str:
+    """
+    Calls LLM to draft PIO response based on current session state analysis.
+    Returns editable draft text.
+    """
+    routing = st.session_state.get('routing_result', {})
+    exemption = st.session_state.get('exemption_analysis', {})
+    entities = st.session_state.get('extracted_entities', {})
+    department = st.session_state.get('effective_department', 'Unknown')
+    is_chips = st.session_state.get('is_chips_jurisdiction', False)
+
+    prompt = f'''You are a drafting assistant for a Public Information Officer (PIO)
+at CHiPS, Chhattisgarh. Draft a concise internal decision note based on the
+analysis below. The note should:
+- State the jurisdiction determination
+- Summarize the information requested
+- State the recommended decision with legal basis
+- Note any exemptions applied or Section 6(3) transfer recommended
+- Sound like an official government internal note
+- Be 150-250 words maximum
+- Start with: 'On examination of the RTI application:'
+
+ROUTING RESULT: {routing}
+DEPARTMENT: {department}
+IS CHIPS JURISDICTION: {is_chips}
+EXTRACTED ENTITIES: {entities}
+EXEMPTION ANALYSIS: {exemption}
+
+IMPORTANT: This is a draft for PIO review. Do not present this as a final legal
+determination. The PIO must review and edit before finalizing.
+'''
+
+    # Call your existing LLM helper
+    from utils.llm import call_llm
+    response = call_llm(prompt, max_tokens=400)
+    return response
+
+--- Table 15 ---
+import streamlit as st
+import json
+from pathlib import Path
+
+st.set_page_config(page_title='RTI Act Reference — CHiPS', layout='wide')
+st.title('📖 RTI Act & Section Reference')
+st.caption('Legal knowledge browser — sourced from RTI Act 2005 and Chhattisgarh RTI Rules')
+
+# Search box at top
+search_query = st.text_input('🔍 Search sections, rules, or keywords:', placeholder='e.g. Section 8, transfer, 30 days, third party')
+
+# Load section data
+@st.cache_data
+def load_sections():
+    sections_file = Path('data/legal_sections.json')
+    if sections_file.exists():
+        return json.loads(sections_file.read_text(encoding='utf-8'))
+    return get_hardcoded_sections()  # fallback
+
+sections = load_sections()
+
+# Filter by search
+if search_query:
+    q = search_query.lower()
+    sections = [s for s in sections if
+                q in s['title'].lower() or
+                q in s['definition'].lower() or
+                q in s['practical_implication'].lower() or
+                any(q in kw.lower() for kw in s.get('keywords', []))]
+    if not sections:
+        st.warning(f'No sections found for: {search_query}')
+
+# Group by module
+modules = {}
+for s in sections:
+    m = s.get('module', 'General')
+    modules.setdefault(m, []).append(s)
+
+# Render each module as a group of accordions
+for module_name, module_sections in modules.items():
+    st.subheader(module_name)
+    for section in module_sections:
+        with st.expander(f"{section['section_number']} — {section['title']}"):
+            col1, col2 = st.columns([3, 2])
+            with col1:
+                st.markdown('**Definition / Legal Text**')
+                st.markdown(section['definition'])
+                st.markdown('**Practical Implication for RTI Processing**')
+                st.info(section['practical_implication'])
+            with col2:
+                if section.get('chips_relevance'):
+                    st.markdown('**CHiPS-Specific Note**')
+                    st.success(section['chips_relevance'])
+                if section.get('common_mistakes'):
+                    st.markdown('**Common Mistakes**')
+                    st.error(section['common_mistakes'])
+                if section.get('source_reference'):
+                    st.caption(f"Source: {section['source_reference']}")
+
+
+def get_hardcoded_sections():
+    """Fallback hardcoded sections if JSON file not present."""
+    return [
+        {
+            'section_number': 'Section 2(f)',
+            'title': 'Definition of Information',
+            'module': 'Foundational Definitions',
+            'definition': 'Information means any material in any form including records, documents, memos, e-mails, opinions, advices, press releases, circulars, orders, logbooks, contracts, reports, papers, samples, models, data material held in any electronic form.',
+            'practical_implication': 'RTI only covers EXISTING information. PIO is not required to create, compile, or provide opinions. If the information does not exist in record form, the RTI cannot be fulfilled.',
+            'chips_relevance': 'CHiPS must only provide information that exists in its records. Requests for analysis, reports, or opinions not already documented can be declined.',
+            'common_mistakes': 'PIOs sometimes try to answer opinion-seeking RTIs. This is not required under the Act.',
+            'source_reference': 'RTI Act 2005, Section 2(f); CG RTI Rules 2005'
+        },
+        {
+            'section_number': 'Section 4',
+            'title': 'Proactive Disclosure',
+            'module': 'Disclosure Obligations',
+            'definition': 'Every public authority shall maintain all its records duly catalogued and publish within 120 days of the Act coming into force 17 categories of information including organization details, powers and duties, rules and regulations, and annual reports.',
+            'practical_implication': 'Proactively disclosed information reduces RTI burden. If information is on CHiPS website, direct applicants there.',
+            'chips_relevance': 'CHiPS should maintain updated Section 4 disclosures on cg.gov.in/chips. This reduces RTI load significantly.',
+            'source_reference': 'RTI Act 2005, Section 4(1)(b)'
+        },
+        {
+            'section_number': 'Section 6(3)',
+            'title': 'Transfer of RTI Application',
+            'module': 'Transfer Rules',
+            'definition': 'Where an application is made to a public authority for information which is held by another public authority, the PIO shall transfer the application or part thereof to the other public authority within 5 days and inform the applicant.',
+            'practical_implication': 'Transfer must happen within 5 days. The applicant must be informed. The transferred authority then has 30 days to respond (not 30 minus the days already spent).',
+            'chips_relevance': 'Most non-IT RTIs received by CHiPS should be transferred under Section 6(3) to the relevant department.',
+            'common_mistakes': 'Transferring without informing applicant. Counting transfer days as part of the 30-day window incorrectly.',
+            'source_reference': 'RTI Act 2005, Section 6(3)'
+        },
+        {
+            'section_number': 'Section 7',
+            'title': 'Disposal of Request — Timelines and Fees',
+            'module': 'Response Timelines',
+            'definition': 'PIO shall provide information within 30 days of receipt of request. For life and liberty matters: 48 hours. If referred to third party under Section 11: 40 days. Fee: Rs. 2 per page (A4/A3), Rs. 50 for diskette/floppy.',
+            'practical_implication': 'The 30-day clock starts from the day after receipt. Fees must be communicated with the rejection/approval notice. Free information for BPL applicants.',
+            'chips_relevance': 'CHiPS digital records may have no per-page cost if provided electronically. Clarify fee structure in response.',
+            'source_reference': 'RTI Act 2005, Section 7(1), Section 7(5)'
+        },
+        {
+            'section_number': 'Section 8(1)',
+            'title': 'Exemptions from Disclosure',
+            'module': 'Exemption Framework',
+            'definition': 'Information exempt from disclosure includes: (a) national security, (d) commercial confidence/trade secrets, (e) fiduciary relationship, (g) informant identity/witness, (h) ongoing investigation, (j) personal privacy.',
+            'practical_implication': 'Exemptions are NOT absolute. Section 8(2) overrides exemptions where corruption or human rights violations are alleged. Every exemption requires specific reasoning — generic rejection is illegal.',
+            'chips_relevance': 'CHiPS exemptions most commonly applicable: 8(1)(d) for vendor contracts, 8(1)(e) for third-party data shared in confidence.',
+            'common_mistakes': 'Applying 8(1)(j) to everything. Not checking Section 8(2) before applying exemption.',
+            'source_reference': 'RTI Act 2005, Section 8(1)(a)–(j)'
+        },
+        {
+            'section_number': 'Section 8(1)(j)',
+            'title': 'Personal Information Exemption',
+            'module': 'Exemption Framework',
+            'definition': 'Information which relates to personal information, the disclosure of which has no relationship to any public activity or interest, or which would cause unwarranted invasion of the privacy of the individual.',
+            'practical_implication': 'This exemption has TWO conditions: (1) no public interest relationship AND (2) would invade privacy. Both must be true. Public officials acting in official capacity are NOT covered by this exemption.',
+            'chips_relevance': 'Employee personal details (salary, home address, family) are covered. But employee official conduct, project assignments, and official decisions are NOT covered.',
+            'common_mistakes': 'Using 8(1)(j) to protect all employee information including official acts.',
+            'source_reference': 'RTI Act 2005, Section 8(1)(j); CIC Order No. CIC/SA/A/2012/000011'
+        },
+        {
+            'section_number': 'Section 11',
+            'title': 'Third Party Information Procedure',
+            'module': 'Third Party Rights',
+            'definition': 'Where information relates to or has been supplied by a third party and the third party has treated it as confidential, the PIO shall give notice to the third party and allow them to make representation within 10 days before deciding on disclosure.',
+            'practical_implication': 'MANDATORY procedure — cannot be skipped. Third party gets 10 days to respond. PIO then has 40 days total (not 30) to give final decision. Failure to follow Section 11 = procedural violation.',
+            'chips_relevance': 'Any RTI about vendor contracts, third-party software, or data provided by companies to CHiPS in confidence must go through Section 11 procedure.',
+            'common_mistakes': 'Disclosing third-party commercial data without Section 11 notice. This is a serious violation.',
+            'source_reference': 'RTI Act 2005, Section 11(1)'
+        },
+        {
+            'section_number': 'CG Rule 4',
+            'title': '150-Word Application Limit',
+            'module': 'Chhattisgarh RTI Rules',
+            'definition': 'Under Chhattisgarh RTI Rules, an RTI request shall ordinarily relate to one subject matter and should not exceed 150 words. Applications exceeding this may be returned for resubmission.',
+            'practical_implication': 'If the application exceeds 150 words or asks about multiple unrelated subjects, PIO may return it and ask for resubmission as separate applications.',
+            'chips_relevance': 'CHiPS PIO should check word count and subject unity before processing. Multi-subject RTIs should be bifurcated into separate applications.',
+            'source_reference': 'CG RTI Rules 2005, Rule 4'
+        },
+    ]
+
+--- Table 16 ---
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from datetime import datetime
+import io
+import streamlit as st
+
+
+def generate_analysis_docx(session_state: dict) -> bytes:
+    """
+    Generate a professionally formatted DOCX report of the AI analysis.
+    Returns bytes for Streamlit download_button.
+    """
+    doc = Document()
+
+    # Header
+    header = doc.add_paragraph()
+    header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = header.add_run('CHiPS — RTI Intelligence System')
+    run.bold = True
+    run.font.size = Pt(16)
+    run.font.color.rgb = RGBColor(0x1F, 0x38, 0x64)
+
+    doc.add_paragraph('AI Analysis Report — Advisory Only', style='Normal').alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    doc.add_paragraph(f"Case ID: {session_state.get('case_id', 'N/A')}")
+    doc.add_paragraph(f"Generated: {datetime.now().strftime('%d %B %Y, %H:%M')}")
+    doc.add_paragraph('⚠️ This report is AI-generated and advisory only. The PIO is the final decision-maker.')
+    doc.add_paragraph('─' * 80)
+
+    # Section 1: Application Summary
+    doc.add_heading('1. Application Summary', level=1)
+    rti_text = session_state.get('rti_text', '')
+    doc.add_paragraph(rti_text[:500] + ('...' if len(rti_text) > 500 else ''))
+
+    # Section 2: Routing
+    doc.add_heading('2. Routing Recommendation', level=1)
+    routing = session_state.get('routing_result', {})
+    doc.add_paragraph(f"Department: {routing.get('department', 'N/A')}")
+    doc.add_paragraph(f"Confidence: {routing.get('confidence', 'N/A')}")
+    doc.add_paragraph(f"Is CHiPS Jurisdiction: {session_state.get('is_chips_jurisdiction', False)}")
+    if session_state.get('pio_routing_override'):
+        doc.add_paragraph(f"PIO Override: {session_state['pio_routing_override']}")
+        doc.add_paragraph(f"Override Reason: {session_state.get('routing_correction_reason', '')}")
+
+    # Section 3: Extracted Entities
+    doc.add_heading('3. Extracted Entities', level=1)
+    entities = session_state.get('extracted_entities', {})
+    for key, val in entities.items():
+        doc.add_paragraph(f'• {key}: {val}')
+
+    # Section 4: Exemption Analysis
+    doc.add_heading('4. Exemption Analysis', level=1)
+    exemption = session_state.get('exemption_analysis', {})
+    doc.add_paragraph(str(exemption))
+
+    # Section 5: Final Recommendation
+    doc.add_heading('5. Final AI Recommendation', level=1)
+    doc.add_paragraph(f"Recommendation: {session_state.get('ai_recommendation', 'N/A')}")
+    doc.add_paragraph(f"PIO Decision: {session_state.get('final_decision_value', 'Pending')}")
+
+    # Section 6: PIO Notes
+    doc.add_heading('6. PIO Notes and Decision', level=1)
+    doc.add_paragraph(session_state.get('pio_decision_text', 'Not yet entered.'))
+
+    # Footer
+    doc.add_paragraph('─' * 80)
+    doc.add_paragraph('This document is intended for internal government use only. AI-Generated Draft.')
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+
+def render_export_buttons(session_state: dict):
+    """Render download buttons in Streamlit. Call at end of Step 3."""
+    st.divider()
+    st.subheader('📥 Export Analysis')
+    col1, col2 = st.columns(2)
+    with col1:
+        docx_bytes = generate_analysis_docx(session_state)
+        st.download_button(
+            label='⬇️ Download AI Analysis as DOCX',
+            data=docx_bytes,
+            file_name=f"RTI_Analysis_{session_state.get('case_id', 'report')}.docx",
+            mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+    with col2:
+        st.info('PDF export: Open the DOCX and Print → Save as PDF, or install weasyprint.')
+
+--- Table 17 ---
+from docx import Document
+from docx.shared import Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from datetime import datetime
+import io
+import streamlit as st
+
+
+DECISION_PATHS = {
+    'Approve — Full Disclosure': 'APPROVE',
+    'Partially Approve — Partial Disclosure': 'PARTIAL',
+    'Reject — Exempt': 'REJECT',
+    'Transfer — Section 6(3)': 'TRANSFER',
+}
+
+
+def generate_response_letter(session_state: dict) -> bytes:
+    """
+    Generate official RTI response letter in government memo format.
+    Follows CHiPS sample RTI response template structure.
+    Returns DOCX bytes.
+    """
+    doc = Document()
+    decision = session_state.get('final_decision_value', '')
+    path = DECISION_PATHS.get(decision, 'APPROVE')
+    case_id = session_state.get('case_id', 'RTI/CHiPS/2025/001')
+    rti_text = session_state.get('rti_text', '')
+    entities = session_state.get('extracted_entities', {})
+    exemptions = session_state.get('exemption_analysis', {})
+    routing = session_state.get('routing_result', {})
+    pio_notes = session_state.get('pio_decision_text', '')
+
+    # ─── HEADER ───────────────────────────────────────────────────
+    h = doc.add_paragraph()
+    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = h.add_run('CHHATTISGARH INFOTECH PROMOTION SOCIETY (CHiPS)')
+    r.bold = True; r.font.size = Pt(14)
+    r.font.color.rgb = RGBColor(0x1F, 0x38, 0x64)
+
+    doc.add_paragraph('Public Information Officer, CHiPS', style='Normal').alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph('Chhattisgarh Government', style='Normal').alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph('─' * 80)
+
+    # ─── FILE NUMBER AND DATE ──────────────────────────────────────
+    doc.add_paragraph(f'File No.: {case_id}')
+    doc.add_paragraph(f'Date: {datetime.now().strftime("%d %B %Y")}')
+    doc.add_paragraph('')
+
+    # ─── SUBJECT LINE ─────────────────────────────────────────────
+    subject_para = doc.add_paragraph()
+    subject_para.add_run('Subject: ').bold = True
+    subject_para.add_run(f'Response to RTI Application — Case {case_id}')
+    doc.add_paragraph('')
+
+    # ─── SALUTATION ───────────────────────────────────────────────
+    applicant_name = entities.get('applicant_name', 'The Applicant')
+    doc.add_paragraph(f'To,\n{applicant_name}')
+    doc.add_paragraph('')
+    doc.add_paragraph('Dear Sir/Madam,')
+    doc.add_paragraph('')
+
+    # ─── OPENING ──────────────────────────────────────────────────
+    doc.add_paragraph(
+        f'With reference to your RTI application received at this office, '
+        f'the following information is being provided/communicated as applicable:'
+    )
+    doc.add_paragraph('')
+
+    # ─── POINT-WISE RESPONSE (path-dependent) ─────────────────────
+    doc.add_heading('Point-wise Response:', level=2)
+
+    if path == 'APPROVE':
+        doc.add_paragraph('1. The information requested falls within the jurisdiction of CHiPS.')
+        doc.add_paragraph('2. The information is available in records and is being disclosed.')
+        doc.add_paragraph(f'3. PIO Decision Notes: {pio_notes}')
+        doc.add_paragraph('4. Please find the requested information enclosed herewith.')
+
+    elif path == 'PARTIAL':
+        doc.add_paragraph('1. The information requested has been reviewed point-wise.')
+        doc.add_paragraph('2. Certain information is being disclosed as detailed below.')
+        doc.add_paragraph('3. Certain information is exempt from disclosure as noted below.')
+        doc.add_paragraph(f'4. Exempt information: {str(exemptions.get("exempt_sections", ""))}')
+        doc.add_paragraph(f'5. PIO Notes: {pio_notes}')
+
+    elif path == 'REJECT':
+        doc.add_paragraph('1. Your RTI application has been examined.')
+        doc.add_paragraph('2. The requested information is exempt from disclosure under the RTI Act 2005.')
+        exempt_secs = exemptions.get('applicable_sections', ['Section 8(1)'])
+        doc.add_paragraph(f'3. Applicable exemption(s): {exempt_secs}')
+        doc.add_paragraph('4. Legal Basis:')
+        doc.add_paragraph(f'   {pio_notes}')
+        doc.add_paragraph('5. You may appeal this decision within 30 days to the First Appellate Authority.')
+
+    elif path == 'TRANSFER':
+        transfer_dept = routing.get('department', 'Relevant Department')
+        doc.add_paragraph('1. Your RTI application has been examined.')
+        doc.add_paragraph(
+            f'2. The information requested does not pertain to the jurisdiction of CHiPS. '
+            f'It relates to the {transfer_dept}.'
+        )
+        doc.add_paragraph(
+            '3. Accordingly, your application is being transferred to the concerned public authority '
+            'under Section 6(3) of the RTI Act 2005. You will be informed by the receiving authority.'
+        )
+
+    # ─── APPEAL RIGHTS (always include for rejections) ────────────
+    if path in ('REJECT', 'PARTIAL'):
+        doc.add_paragraph('')
+        doc.add_heading('Appeal Information:', level=2)
+        doc.add_paragraph(
+            'If you are not satisfied with this response, you may file a First Appeal '
+            'within 30 days of receipt of this reply to the First Appellate Authority, CHiPS. '
+            'If still not satisfied, you may file a Second Appeal to the State Information Commission '
+            'under Section 19(3) of the RTI Act 2005.'
+        )
+
+    # ─── CLOSING ──────────────────────────────────────────────────
+    doc.add_paragraph('')
+    doc.add_paragraph('Yours faithfully,')
+    doc.add_paragraph('')
+    doc.add_paragraph('')
+    doc.add_paragraph('________________________________')
+    doc.add_paragraph('Public Information Officer')
+    doc.add_paragraph('CHiPS, Chhattisgarh Government')
+    doc.add_paragraph('')
+    doc.add_paragraph('Note: Enclosures as mentioned above.', style='Normal')
+
+    # ─── AI DISCLAIMER ────────────────────────────────────────────
+    doc.add_paragraph('─' * 80)
+    disc = doc.add_paragraph()
+    disc.add_run('IMPORTANT: ').bold = True
+    disc.add_run(
+        'This letter was generated with AI assistance and reviewed by the PIO. '
+        'The PIO takes full responsibility for the final content after review and approval. '
+        'AI draft generated by CHiPS RTI Intelligence System.'
+    )
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+
+def render_response_letter_section(session_state: dict):
+    """Add to bottom of Step 3 after decision is finalized."""
+    if not session_state.get('decision_finalized', False):
+        return
+
+    st.divider()
+    st.subheader('📄 Generate Official Response Letter')
+    st.caption('Generates a formal RTI response letter in CHiPS memo format. Review before sending.')
+
+    if st.button('📝 Generate Response Letter Draft', type='primary'):
+        with st.spinner('Generating official response letter...'):
+            letter_bytes = generate_response_letter(session_state)
+            st.session_state['response_letter_bytes'] = letter_bytes
+            st.success('Response letter generated. Download and review before use.')
+            st.warning('⚠️ AI-Generated Draft — Review Required before sending to applicant.')
+
+    if session_state.get('response_letter_bytes'):
+        case_id = session_state.get('case_id', 'response')
+        st.download_button(
+            label='⬇️ Download Response Letter (DOCX)',
+            data=session_state['response_letter_bytes'],
+            file_name=f'RTI_Response_{case_id}.docx',
+            mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        from utils.audit_logger import log_response_letter_generated
+        log_response_letter_generated(
+            case_id=case_id,
+            letter_text='[DOCX generated]',
+            export_format='docx'
+        )
+
+--- Table 18 ---
+import uuid
+from datetime import datetime
+
+# Generate case ID at session start
+if 'case_id' not in st.session_state:
+    st.session_state['case_id'] = f"RTI/CHiPS/{datetime.now().year}/{uuid.uuid4().hex[:8].upper()}"
+
+# Initialize all session state variables
+_defaults = {
+    'rti_text': '',
+    'parse_result': None,
+    'routing_result': {},
+    'is_chips_jurisdiction': False,
+    'effective_department': '',
+    'pio_routing_override': None,
+    'routing_correction_reason': '',
+    'extracted_entities': {},
+    'exemption_analysis': {},
+    'ai_recommendation': '',
+    'pio_decision_text': '',
+    'ai_draft_original': '',
+    'autofield_used': False,
+    'final_decision_value': '',
+    'decision_finalized': False,
+    'response_letter_bytes': None,
+}
+for k, v in _defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# Navigation — add RTI Act Reference page
+# If using st.navigation() or pages/ folder:
+# Streamlit auto-detects pages/ folder and adds them to sidebar.
+# The pages/rti_reference.py file will appear as 'Rti Reference' in sidebar.
+# Rename it by adding this at the top of pages/rti_reference.py:
+# st.set_page_config(page_title='RTI Act Reference', page_icon='📖')
+
+# Show case ID in sidebar
+st.sidebar.caption(f"Case ID: {st.session_state['case_id']}")
+st.sidebar.caption(f"Date: {datetime.now().strftime('%d %b %Y')}")
+
+--- Table 19 ---
+# Add these to your existing requirements.txt
+pytesseract>=0.3.10
+Pillow>=10.0.0
+PyMuPDF>=1.23.0          # fitz
+python-docx>=1.1.0
+python-docx>=1.1.0       # for response letter generation
+
+# System dependency (must install separately):
+# Ubuntu/Debian: sudo apt-get install tesseract-ocr tesseract-ocr-hin
+# Windows: https://github.com/UB-Mannheim/tesseract/wiki
+# macOS: brew install tesseract tesseract-lang
+
+--- Table 20 ---
+Follow This Exact Order
+Step 1: Create audit_logger.py and verify it writes to audit_log/ correctly.
+         Test: import and call log_rti_input manually. Check audit_log/ directory.
+
+Step 2: Create document_parser.py and test on a sample RTI PDF.
+         Test: parse_uploaded_file should return ParseResult with text and confidence.
+
+Step 3: Modify app.py to add case ID initialization and new session state defaults.
+         Test: st.session_state['case_id'] should appear in sidebar.
+
+Step 4: Replace Step 1 input section with upload-aware version.
+         Test: Upload a PDF — should see extracted text and OCR confidence metric.
+
+Step 5: Add routing correction UI and CHiPS jurisdiction gate.
+         Test: Enter a non-CHiPS RTI — Steps 2 and 3 should be skipped.
+
+Step 6: Add Autofield button to Step 3 PIO decision section.
+         Test: Click Autofield — textarea should fill with editable draft.
+
+Step 7: Create pages/rti_reference.py.
+         Test: New page appears in sidebar as 'RTI Act Reference'.
+
+Step 8: Add export_report.py and response_letter.py.
+         Test: Download buttons appear after analysis. DOCX downloads correctly.
+
+Step 9: Test full flow end-to-end with a real CHiPS RTI example.
+         Verify: audit_log/ contains case file with all 5 event types.
+
+Step 10: Run export_training_data() and verify corrections.jsonl output.
+
+--- Table 21 ---
+Feature | Test | Pass Condition
+PDF upload + text extraction | Upload scanned RTI PDF | Text extracted, OCR confidence shown, warning if < 85%
+OCR gate | Upload very low quality scan | Processing blocked, manual correction prompted
+Routing correction field | Change predicted department | Override logged to audit, correction reason recorded
+CHiPS jurisdiction gate | Enter non-CHiPS RTI | Steps 2 and 3 skipped, transfer recommendation shown
+Autofield button | Click in PIO decision area | Textarea fills with editable draft, AI warning shown
+Autofield non-overwriting | Edit text, click Autofield again | Replaces only when clicked, not on re-render
+RTI Act Reference page | Navigate to reference page | Sections visible as accordions, search works
+DOCX analysis export | Click download after analysis | Valid DOCX downloads with all 6 sections
+Response letter generator | Finalize decision, generate letter | DOCX downloads in memo format, correct path used
+Audit log | Complete a full case | audit_log/YYYY-MM-DD/{case_id}.json with 5 events
+Training data export | Run export_training_data() | corrections.jsonl created with PIO corrections
+
+--- Table 22 ---
+FINAL REMINDER TO DEVELOPER
+Every single output in this system must carry the label:
+'AI-Generated Draft — Review Required' until the PIO confirms it.
+
+The audit log is the legal record of this system. If it fails, the system cannot be
+defended in court. Test audit logging first, before building any UI.
+
+The CHiPS jurisdiction gate is the most critical logic gate. Test it with at least
+10 non-CHiPS RTIs to confirm exemption analysis is never triggered.
+
+When in doubt: do less, audit more.

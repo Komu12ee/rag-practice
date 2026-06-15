@@ -1,0 +1,9 @@
+{
+  "extracted_entities": ["Suresnyogaacharyamd@nucleustechworks.com / 7892193475", "Shridhar Diwan", "CHIPS Office", "Ministry of Information Technology", "220260503001167", "66010526000628"],
+  "information_type": "other",
+  "systems": ["CHIPS Office"],
+  "procurement_status": "none",
+  "personal_data": true,
+  "public_interest_override": true,
+  "explanation": "The application requests information about pending court cases, which is general public information and not sensitive or specific to any individual."
+}

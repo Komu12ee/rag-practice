@@ -1,0 +1,111 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments and local package state
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+pip-wheel-metadata/
+*.egg-info/
+.python-version
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets.*
+
+# Logs and runtime files
+*.log
+logs/
+data/logs/
+audit_log/
+*.pid
+*.tmp
+*.temp
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+rti_audit.db
+backend/rti_audit.db
+data/db/
+
+# Generated Phase 1 legal pipeline outputs
+data/extracted/
+data/chunks/
+data/metadata/
+data/indexes/
+data/vectorstore/
+
+# Large local legal corpora and PDFs
+data/cic_decisions/
+data/sic_decisions/
+data/cic_pdfs_past_cases/
+data/sic/pdf/
+data/**/*.pdf
+*.pdf
+
+# Keep placeholder files if added later
+!data/**/.gitkeep
+!templates/**/*.pdf
+
+# Frontend dependencies and build outputs
+node_modules/
+frontend-react/node_modules/
+dist/
+build/
+frontend-react/dist/
+frontend-react/build/
+.next/
+.vite/
+coverage/
+
+# Package manager caches and debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json.tmp
+
+# Streamlit and local app state
+.streamlit/secrets.toml
+*.session
+
+# Jupyter and notebooks runtime state
+.ipynb_checkpoints/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+~$*
+*.bak
+
+# Microsoft Office temporary files
+~$*.doc
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Local scratch/output folders
+scratch/*.tmp
+scratch/*_output.txt
+tmp/
+temp/

@@ -1,0 +1,761 @@
+CONFIDENTIAL — TECHNICAL ARCHITECTURE DOCUMENT
+RTI Intelligence System
+Principal Architect's Deep Technical Assessment
+CHiPS — Chhattisgarh Infotech Promotion Society | Public Information Officer
+Classification: Restricted | For PIO and Technical Team Only
+
+ARCHITECT'S OPENING CHALLENGE — READ THIS FIRST
+Before building a single line of code, the team must internalize this:
+
+This system will make legal decisions. Every output — every rejection recommendation,
+every exemption flag, every confidence score — may be cited in a court of law, challenged
+before the Central Information Commission (CIC), or reviewed by a High Court under
+Article 226. A wrong recommendation does not just produce a bad user experience.
+It exposes the PIO to personal liability under Section 20 of the RTI Act.
+
+This changes every architecture decision. It is not a chatbot. It is a legal decision
+support system. The architect who treats it like a chatbot will produce a liability, not a product.
+
+The single most important design principle: The AI RECOMMENDS. The PIO DECIDES.
+Every interface, every output, every log must make this distinction absolutely clear.
+
+1. UNDERSTANDING OF THE PROBLEM
+The PIO at CHiPS receives RTI applications covering a wide range of government functions, many of which do not fall under CHiPS jurisdiction. The PIO currently handles: (1) jurisdiction determination, (2) information classification, (3) exemption analysis, (4) disclosure decision, and (5) response drafting — largely manually.
+ 
+The proposed system automates the analytical support layer for these five activities, not the decision itself. This distinction is not semantic — it is the legal firewall between a useful tool and a liability.
+ 
+What This System Actually Is
+A legal decision SUPPORT system, not a decision MAKING system
+An audit trail generator that protects the PIO's decisions
+A knowledge retrieval system over RTI Act, rules, and prior CIC orders
+A structured analysis engine that surfaces exemption arguments on both sides
+A department routing assistant for non-CHiPS applications
+ 
+What This System Is NOT
+An autonomous RTI response system — never automated, always PIO-reviewed
+A replacement for legal counsel on complex cases
+A system that can be exposed directly to applicants
+A 'reject by default' engine — that would violate RTI Act Section 7(1)
+
+2. HIDDEN CHALLENGES — BRUTAL HONESTY
+The following challenges are not mentioned in your brief. Every single one is a project killer if not addressed before architecture is finalized.
+ 
+Challenge 1: The Bilingual Legal Corpus Problem
+Severity: CRITICAL
+RTI applications in Chhattisgarh arrive in Hindi, English, and mixed language.
+RTI Act sections are in English. CIC orders are primarily in English with Hindi mixed in.
+Your applicants write in colloquial Hindi with local Chhattisgarhi terms.
+
+'भूमि अभिलेख' vs 'land records' vs 'jamin ki nakal' — all mean the same thing but
+your embedding model treats them as different. If you build on English-only embeddings,
+your department routing will fail on 40-60% of real applications.
+
+Solution: You MUST use a multilingual embedding model (LaBSE, multilingual-e5-large)
+and validate routing accuracy separately on Hindi and English test sets.
+ 
+Challenge 2: OCR Error Cascading Into Legal Decisions
+Severity: HIGH
+Most RTI applications arrive as scanned PDFs or handwritten documents.
+OCR errors in legal text are catastrophic: 'Section 8(1)(d)' misread as 'Section 8(1)(a)'
+changes the entire legal analysis. 'नहीं' (no) misread as 'नही' or omitted entirely
+inverts the meaning of a sentence.
+
+Your system must: (1) flag low OCR confidence scores for manual review before processing,
+(2) never run exemption analysis on text with OCR confidence < 85%, (3) store the
+original scanned image alongside extracted text so the PIO can verify.
+
+This is not optional. An OCR error that leads to wrongful rejection = CIC complaint.
+ 
+Challenge 3: The Annotation Bootstrapping Problem
+Severity: HIGH
+You have no labeled training data. Zero. Building a fine-tuned classifier requires
+hundreds of annotated RTI examples with ground-truth department labels and exemption
+decisions. These do not exist in a usable form.
+
+This means: (1) your Day 1 system CANNOT use a fine-tuned classifier — it must use
+zero-shot LLM with RAG, (2) you need an annotation pipeline from Day 1 to build
+training data for a future fine-tuned model, (3) every PIO decision in the system
+becomes a labeled training example if captured correctly.
+
+The annotation strategy is not a Phase 2 concern. It must be built into the MVP.
+ 
+Challenge 4: The '3 Days MVP' Assumption Must Be Challenged
+ASSUMPTION CHALLENGED
+A 3-day MVP for a legal decision support system is achievable ONLY if scope is ruthlessly cut.
+A 3-day MVP that tries to do all 5 steps will do none of them correctly.
+
+What is achievable in 3 days: Department routing (Step 1) only, with basic RAG
+over the RTI Act text, with a simple UI that outputs: department name + confidence +
+reasoning. That is the 3-day MVP. Steps 2-5 require 3-4 weeks.
+
+If you try to build Steps 1-5 in 3 days, you will produce a hallucinating system
+that gives confident-sounding wrong legal advice. This is worse than no system.
+
+Recommendation: 3-day MVP = Step 1 only. Step 2-3 = Week 2. Step 4-5 = Week 3-4.
+ 
+Challenge 5: Section 8 Exemptions Are NOT Binary
+Severity: HIGH
+Your brief assumes exemption analysis produces: Fully Disclosable / Partially / Fully Exempt.
+In reality, Indian courts and CIC have produced 15+ years of nuanced orders where:
+
+- The same information was exempt under Section 8(1)(e) in one case, disclosable in another
+  based on a 3-word difference in how the question was framed.
+- Section 8(2) mandatory overrides: even exempt info MUST be disclosed if it concerns
+  allegations of corruption or human rights violations. Your system must check Section 8(2)
+  BEFORE applying any Section 8(1) exemption.
+- Third-party information (Section 11) requires notice to the third party BEFORE disclosure.
+  Your system must flag this and trigger the Section 11 process, not just output 'disclosable'.
+
+A rule-based exemption engine that does not model these interactions will produce
+legally dangerous recommendations.
+ 
+Challenge 6: Government Data Availability Is Overestimated
+Severity: MEDIUM
+Your architecture assumes CHiPS has structured data to index: SOPs, policies, contracts,
+project documents, employee records. In reality:
+
+- Most government records are in physical files, not digital systems
+- Digital records exist in siloed systems with no API access
+- Sensitive procurement/contract data may not be legally accessible even to the RAG system
+- Employee data is protected under privacy rules and cannot be freely indexed
+
+Realistic data you CAN index: RTI Act text, CIC orders (public), department circulars
+(public), past RTI responses (public after disclosure), CHiPS public website content.
+You cannot and should not index: personal data of employees, security architecture
+documents, procurement details under active tender, or third-party commercial data.
+ 
+Challenge 7: Confidence Score Misinterpretation Risk
+Severity: MEDIUM
+A PIO seeing 'Confidence: 92% — Recommend REJECT' will anchor on that number.
+They will perceive it as legal certainty. The AI's 92% is a calibration score, not a
+legal certainty. This is how PIOs get into trouble with CICs.
+
+Solution: Never display raw confidence percentages to PIO without interpretation.
+Display: 'Strong evidence for rejection — PIO review recommended' not '92%'.
+Every output must include: 'This is a recommendation only. Final decision is the PIO's.'
+
+3. SYSTEM ARCHITECTURE OPTIONS — EVALUATED
+Option A: Monolithic RAG System
+Single LLM with all documents indexed, single prompt handling all 5 steps.
+Pros
+Cons
+Simple to build in 3 days
+Context window overflow on complex RTIs
+Single failure point to debug
+One prompt trying to do 5 different legal tasks
+Lower infrastructure cost
+No separation of concerns — hard to audit
+Works as a prototype
+Routing accuracy degrades as prompt gets complex
+Easy to iterate on
+Cannot independently improve each analysis step
+ 
+Verdict: Acceptable ONLY for MVP Step 1 routing. Not acceptable for production legal analysis.
+ 
+Option B: Multi-Agent Pipeline (Recommended for Production)
+Separate specialized agents for each analysis step, orchestrated by a supervisor agent.
+Pros
+Cons
+Each agent independently auditable
+More complex to build (3-4 weeks not 3 days)
+Each agent improvable without breaking others
+Requires orchestration layer (LangGraph)
+Routing agent can be separately benchmarked
+More API cost per RTI analysis
+Exemption agent can be fine-tuned independently
+More moving parts = more failure modes
+Each agent's RAG corpus separately managed
+Requires more infrastructure
+ 
+Verdict: Correct architecture for production. Build toward this after MVP.
+ 
+Option C: Rule-Based + LLM Hybrid
+Deterministic rules for known exemptions, LLM only for ambiguous cases.
+Pros
+Cons
+Rules are auditable and explainable
+Rules require legal expert to define and maintain
+Fast — no LLM call for clear cases
+Rules cannot handle novel phrasings
+Lower cost for high-volume cases
+Rule maintenance burden grows with case law
+Rules are defensible in court
+Initial rule coding requires RTI law expertise
+ 
+Verdict: The correct exemption detection approach. Rules handle known patterns, LLM handles ambiguity.
+
+4. RECOMMENDED ARCHITECTURE
+Production Architecture: 5-Agent Pipeline with Hybrid RAG
+Architecture Summary
+LAYER 1 — INPUT PROCESSING
+  OCR Engine (Tesseract + language detection) → Text extraction with confidence scoring
+  Language detector → Route to Hindi/English/Mixed processing pipeline
+  Input validator → Flag low-confidence OCR for manual review
+
+LAYER 2 — ORCHESTRATION
+  Supervisor Agent (LangGraph) → Receives validated text, orchestrates agent pipeline
+  State management → Maintains RTI analysis state across all 5 agents
+  Audit logger → Immutable log of every agent decision and retrieval
+
+LAYER 3 — ANALYSIS AGENTS
+  Agent 1: Jurisdiction Classifier → Department routing with confidence
+  Agent 2: Information Extractor → Structured JSON extraction
+  Agent 3: Exemption Analyzer → Rule-based + LLM hybrid analysis
+  Agent 4: Disclosure Balancer → Arguments for + against disclosure
+  Agent 5: Recommendation Generator → Final structured recommendation
+
+LAYER 4 — KNOWLEDGE BASE
+  Vector DB 1: RTI Act + Rules + CIC orders (legal corpus)
+  Vector DB 2: CHiPS internal policies and SOPs (restricted corpus)
+  Vector DB 3: Department jurisdiction map (structured lookup)
+  Rule Engine: Hard-coded Section 8 exemption rules
+
+LAYER 5 — HUMAN REVIEW INTERFACE
+  PIO Dashboard: All recommendations with reasoning, never auto-executed
+  Annotation capture: PIO accept/override/reject → training data
+  Audit trail: Full chain of custody for every decision
+
+5. AGENT DESIGN — EACH AGENT IN DETAIL
+Agent 1: Jurisdiction Classifier
+Purpose:
+Determine whether the RTI belongs to CHiPS or another government department. Recommend Section 6(3) transfer if applicable.
+Architecture:
+Primary: Embedding similarity search over department jurisdiction corpus
+Fallback: LLM with few-shot examples when similarity score < 0.70
+Structured output: { department, confidence, reasoning, transfer_applicable, section_reference }
+Routing Decision Logic:
+Similarity Score
+Decision
+Action
+Human Review?
+> 0.90
+High confidence routing
+Auto-route to department
+No
+0.70 – 0.90
+Medium confidence
+LLM confirmation pass
+Flag for PIO review
+< 0.70
+Low confidence
+Human review required
+Yes — mandatory
+ 
+Agent 2: Information Extractor
+Purpose:
+Extract structured information from RTI text. Identify what type of information is being requested, which government systems are referenced, and what documents are named.
+Architecture:
+Structured extraction using LLM with strict JSON schema enforcement
+Output validated against Pydantic schema — hallucinated fields rejected
+Entity extraction for: people names, system names, dates, document numbers, sections cited
+Classification of information type: citizen data / internal / confidential / architecture / procurement / employee / cybersecurity
+Critical Design Decision:
+Information Type Classification Is Legal-Consequential
+Whether information is classified as 'internal' vs 'confidential' vs 'cybersecurity-related'
+directly determines which Section 8 exemptions are analyzed.
+A misclassification at this stage cascades into wrong exemption analysis.
+This agent's output must be shown to the PIO for confirmation BEFORE exemption analysis runs.
+Do NOT run Agent 3 on Agent 2's output without PIO confirmation on complex cases.
+ 
+Agent 3: Exemption Analyzer
+Purpose:
+Match RTI request against all applicable Section 8 exemptions, Section 9, and Section 11. Produce legally reasoned analysis with section citations.
+Architecture — Hybrid Rule + LLM:
+Two-Layer Exemption Analysis
+LAYER A — RULE ENGINE (runs first, always):
+  Deterministic rules for clear-cut exemptions:
+  IF information_type == 'third_party_commercial' → Flag Section 11 process required
+  IF government_system CONTAINS security_keywords → Flag Section 8(1)(a)
+  IF procurement_status == 'active_tender' → Flag Section 8(1)(d)
+  IF personal_data == True → Flag Section 8(1)(j)
+  ALSO: Check Section 8(2) — if corruption/human_rights → Rule exemptions may not apply
+
+LAYER B — LLM ANALYSIS (runs after rules, for ambiguous cases):
+  Input: RTI text + rule engine flags + retrieved CIC precedents
+  Task: Analyze applicability of flagged exemptions + identify any rules missed
+  Output: Reasoned analysis with exact section quotes from retrieved corpus
+  Constraint: LLM cannot flag exemptions the rule engine did not — it can only analyze
+  flagged exemptions and REMOVE inapplicable ones (prevents hallucinated exemptions)
+ 
+Agent 4: Disclosure Balancer
+Purpose:
+Produce both the strongest case FOR disclosure and the strongest case AGAINST disclosure. This is the anti-hallucination, anti-bias layer.
+Why This Agent Must Exist:
+The PIO's Stated Preference Creates a Bias Risk
+The PIO said: 'Departments prefer not to disclose unless legally required.'
+If the system is built to FIND exemptions, it will find them — even where they are legally
+inapplicable. This is called confirmation bias in AI systems.
+
+An AI system that systematically recommends rejection will produce a pattern of
+wrongful rejections. When these reach CIC, the government will lose every case.
+The PIO faces Section 20 penalties. The system becomes a liability.
+
+Agent 4 is the adversarial layer. It must produce the strongest possible disclosure
+argument even when the system leans toward rejection. The PIO must see BOTH sides.
+ 
+Agent 5: Recommendation Generator
+Purpose:
+Synthesize all prior agent outputs into a structured, actionable recommendation for the PIO.
+Output Schema:
+Final Recommendation JSON Schema
+{
+  'recommendation': 'TRANSFER | APPROVE | PARTIALLY_APPROVE | REJECT',
+  'confidence_band': 'HIGH | MEDIUM | LOW',  // Never a raw number — see Challenge 7
+  'primary_reasoning': 'Plain language explanation, max 150 words',
+  'sections_applied': ['Section 6(3)', 'Section 8(1)(d)'],
+  'exemptions_applicable': [{ 'section': '8(1)(d)', 'reasoning': '...', 'strength': 'STRONG' }],
+  'exemptions_considered_inapplicable': [{ 'section': '8(1)(j)', 'reason': '...' }],
+  'disclosure_risk': 'What could go wrong if disclosed',
+  'rejection_risk': 'What could go wrong if rejected — CIC precedent',
+  'suggested_pio_action': 'Exact next step with timeline',
+  'requires_third_party_notice': true | false,
+  'requires_legal_consultation': true | false,
+  'audit_id': 'Unique ID linking to full analysis chain'
+}
+
+6. RAG DESIGN
+Knowledge Base Architecture
+Corpus
+Content
+Access Level
+Update Frequency
+Legal Corpus
+RTI Act 2005, RTI Rules, Section 8 commentary, CIC orders (public)
+All agents
+Monthly — new CIC orders
+Jurisdiction Corpus
+Department function list, Section 6(3) transfer guidelines, past routing decisions
+Agent 1 only
+When departments change
+CHiPS Policy Corpus
+CHiPS SOPs, public policies, project documents, disclosure log
+Agents 2,3,4 only
+When policies update
+Precedent Corpus
+Past RTI responses by CHiPS (anonymized), approved responses as templates
+Agent 5 only
+After each approved response
+ 
+Chunking Strategy for Legal Documents
+Legal Documents Must NOT Use Fixed-Size Chunking
+Section 8(1)(d) is ONE clause. If you chunk by token count, you will split:
+'...information available to a person in his fiduciary capacity, [CHUNK BREAK]
+unless the competent authority is satisfied that...'
+
+The second half is the critical override. Splitting it loses the legal meaning entirely.
+
+Required: Section-aware chunking for the RTI Act.
+  - Each section (8(1)(a), 8(1)(b)...) is ONE atomic chunk
+  - Each CIC order is chunked by: case header + facts + order (3 chunks per order)
+  - Overlap: 100 tokens between sub-section chunks only
+  - Metadata: section_number, case_number, date, outcome MUST be in chunk metadata
+ 
+Embedding Model for Bilingual RTI Corpus
+Recommended: multilingual-e5-large (free, open source)
+Why: Trained on 100+ languages including Hindi. Performs competitively with
+OpenAI ada-002 on retrieval benchmarks while being free to run locally.
+
+Alternative: LaBSE (Language-Agnostic BERT Sentence Embeddings) — better for
+cross-lingual retrieval (Hindi query → English document retrieval).
+
+DO NOT USE: text-embedding-ada-002 or text-embedding-3 for production — English-primary
+embeddings will degrade Hindi query performance by 30-40%.
+
+Hybrid search: BM25 (keyword) + dense (semantic) with Reciprocal Rank Fusion.
+BM25 handles exact section number matches ('Section 8(1)(d)') better than dense vectors.
+Dense handles semantic equivalents ('confidential government info' = 'fiduciary data').
+
+7. EXEMPTION DETECTION STRATEGY
+The Correct Answer: Rule-Based Core + LLM Wrapper
+The question of whether exemption detection should be rule-based, LLM-based, or hybrid has a definitive answer in the context of a legal system that may be audited in court:
+ 
+Approach
+Legal Defensibility
+Coverage
+Recommended Use
+Pure LLM
+LOW — cannot explain why it flagged an exemption beyond generated text
+HIGH — catches novel patterns
+Never as primary method
+Pure rules
+HIGH — deterministic, auditable, citable
+MEDIUM — misses novel phrasings
+Core layer only
+Hybrid (recommended)
+HIGH — rules are primary, LLM adds analysis
+HIGH — rules + LLM complement each other
+Production system
+ 
+Section 8 Rule Map — What Must Be Hard-Coded
+Section
+Trigger Condition
+System Action
+Override Condition
+8(1)(a)
+Keywords: national security, defense, intelligence, RAW, IB, foreign relations
+Flag + require senior PIO review
+Section 8(2): corruption/HR allegations override
+8(1)(d)
+Keywords: trade secret, commercial confidence, intellectual property, third-party business data
+Flag Section 11 process + competitor harm assessment
+Section 8(2) override applicable
+8(1)(e)
+Keywords: fiduciary capacity, in trust, confidentiality obligation
+Flag + check if competent authority satisfaction needed
+Section 8(2) override applicable
+8(1)(g)
+Keywords: informant identity, witness identity, undercover operation
+Auto-flag HIGH sensitivity + require legal review
+Section 8(2) override applicable
+8(1)(h)
+Keywords: investigation ongoing, court proceedings, apprehension of offender
+Flag + check if proceedings still active (date-dependent)
+Completed proceedings = may be disclosable
+8(1)(j)
+Keywords: personal information, privacy, medical, financial (personal)
+Flag + proportionality test required
+Public activity exception applies
+Section 9
+Keywords: third-party copyright, breach of privilege
+Flag + IP assessment
+Fair dealing exceptions
+Section 11
+Information provided by third party in confidence
+Mandatory: third-party notice required before disclosure
+Cannot be overridden — procedural requirement
+
+8. DEPARTMENT ROUTING STRATEGY
+The Routing Challenge: 30+ Departments, Overlapping Jurisdictions
+The Hardest Routing Cases Are Overlapping Jurisdictions
+RTI: 'Status of PMGSY road construction in my village'
+  → Could be: PWD (construction), Rural Development (PMGSY scheme), Panchayat (local body)
+  → Correct routing depends on: who is the implementing agency in that specific location
+
+RTI: 'Why was my e-Caste certificate delayed on e-District portal?'
+  → Portal = CHiPS responsibility | Certificate = Revenue Department responsibility
+  → Correct answer: BOTH — CHiPS for portal issues, Revenue for processing delay
+  → Your system must handle multi-department routing, not just single-department
+
+RTI: 'Employee service records of a government employee'
+  → Department where employee works, NOT necessarily the employee's parent cadre department
+ 
+Recommended Routing Architecture
+Build a structured Department-Function Matrix (not just embeddings)
+Each department has: name, function keywords, parent ministry, common RTI types, jurisdiction limits
+First pass: exact keyword matching against function matrix — handles 60% of cases
+Second pass: embedding similarity — handles semantic variations
+Third pass: LLM with few-shot examples — handles ambiguous/multi-department cases
+Output always includes: primary_department + confidence + alternative_departments + overlap_risk_flag
+ 
+Data Required From CHiPS and Other Departments
+From CHiPS (Internal — Restricted Access):
+List of all IT systems operated/managed by CHiPS with functional descriptions
+List of projects with implementing agency classification
+Past RTI responses approved by PIO (anonymized) — minimum 100 examples
+CHiPS organizational chart with role descriptions
+List of third-party vendors and nature of engagement (for Section 11 analysis)
+Public procurement contracts above threshold (these are disclosable)
+From Other Departments (Public Sources):
+Chhattisgarh government department function list (available on cg.gov.in)
+RTI rules for Chhattisgarh state (state-specific supplements to central RTI Act)
+CIC Chhattisgarh orders — public, available on CIC website
+Annual RTI disclosure proforma submissions (Section 4 proactive disclosures)
+External Legal Sources (Public — Free):
+RTI Act 2005 full text with amendments — rtihelpline.com, rti.india.gov.in
+Central CIC orders — cic.gov.in/decisions (searchable database, 100,000+ orders)
+State CIC orders — cg.nic.in/sic (Chhattisgarh SIC website)
+DOPT guidelines on RTI implementation — dopt.gov.in
+
+9. EVALUATION FRAMEWORK
+Metrics That Matter for a Legal System
+Metric
+Definition
+Acceptable Threshold
+Why It Matters Legally
+Department Routing Accuracy
+% of RTIs routed to correct department
+> 92%
+Wrong routing = applicant loses 30 days + transfer time
+Exemption Recall
+% of applicable exemptions correctly identified
+> 90%
+Missed exemption = wrongful disclosure risk
+Exemption Precision
+% of identified exemptions that are actually applicable
+> 85%
+False exemption = wrongful rejection = CIC complaint
+False Rejection Rate
+% of disclosable RTIs wrongly recommended for rejection
+< 5%
+Section 20 penalty risk for PIO
+False Disclosure Rate
+% of exempt RTIs wrongly recommended for disclosure
+< 3%
+Security/privacy breach, third-party complaint
+Section 11 Recall
+% of third-party RTIs correctly flagged for notice
+100%
+Failure is a procedural legal violation
+Audit Completeness
+% of recommendations with full reasoning chain
+100%
+Incomplete audit = indefensible in CIC hearing
+Bilingual Parity
+Routing accuracy: Hindi vs English RTIs
+< 5% gap
+Discriminatory outcomes if gap is larger
+ 
+Ground Truth Label Creation Strategy
+How to Build Ground Truth Without Labeled Data
+Phase 1 — Retrospective labeling (Weeks 1-2):
+  Collect last 100-200 RTI applications received by CHiPS PIO.
+  For each: record actual department routed to, actual decision made, sections cited.
+  This is your initial ground truth dataset.
+
+Phase 2 — Expert annotation (Weeks 3-4):
+  Have PIO or legal consultant annotate 50 representative RTIs with:
+  correct_department, applicable_exemptions, correct_recommendation, reasoning.
+  Use this as your gold standard evaluation set — NEVER use for training.
+
+Phase 3 — Continuous annotation (Ongoing):
+  Every PIO override of a system recommendation = labeled training example.
+  Capture: system_recommendation, pio_decision, pio_reasoning.
+  Label format: { rti_text, system_output, pio_override, override_reason, timestamp }
+
+Phase 4 — Adversarial testing (Month 2+):
+  Create synthetic RTI examples designed to test edge cases:
+  - RTI with multiple department overlap
+  - RTI invoking Section 8 but with Section 8(2) corruption override
+  - RTI in Hindi with OCR errors deliberately introduced
+  - RTI requesting third-party information without realizing it
+
+10. RISK ANALYSIS
+Failure Mode Analysis — Every Way This System Can Go Wrong
+Failure Mode
+Likelihood
+Severity
+Mitigation
+LLM hallucination of non-existent CIC order
+HIGH
+CRITICAL — legal
+Never let LLM cite sources. Only cite sources retrieved from RAG corpus. Validate all citations against index.
+OCR error changes legal meaning
+HIGH
+HIGH
+OCR confidence threshold. Store original image. Flag for manual review below 85% confidence.
+Section 11 flag missed
+MEDIUM
+CRITICAL
+Deterministic rule — if third-party keyword detected, ALWAYS flag. LLM cannot override this rule.
+PIO over-relies on AI recommendation
+HIGH
+HIGH
+UI design: recommendation is advisory only. PIO must click 'I have reviewed and I take responsibility' before finalizing.
+Hindi RTI misrouted due to embedding failure
+MEDIUM
+HIGH
+Multilingual embeddings. Separate accuracy tracking for Hindi vs English. Threshold-based fallback to LLM.
+Sensitive internal data leaked through RAG
+LOW
+CRITICAL
+Separate corpora for restricted vs public data. Access control at corpus level. Never index PII.
+Model update breaks existing behavior
+MEDIUM
+MEDIUM
+Pin model versions. Regression test suite runs before any model update. Canary deployment.
+Systematic bias toward rejection
+HIGH
+HIGH
+Adversarial Disclosure Agent (Agent 4) is mandatory. Track false rejection rate as primary KPI.
+RTI asking for system architecture of this system
+MEDIUM
+HIGH
+System architecture = Section 8(1)(a) potential. Never store system architecture in indexed corpus.
+Audit trail manipulation
+LOW
+CRITICAL — legal
+Append-only audit log. Hash-chained entries. No delete operation on audit records ever.
+
+11. SECURITY CONSIDERATIONS
+Government Deployment Security Requirements
+This System Processes Legal Decisions — Government Security Standards Apply
+The system handles sensitive RTI applications that may contain personal information,
+allegations against government officials, and sensitive departmental data.
+Security is not an afterthought. It is a legal requirement.
+ 
+Data Security:
+All RTI application data stays within government network — no external API calls with RTI content
+If using OpenAI/Anthropic API: RTI text MUST be anonymized before sending. Strip: applicant name, address, ID numbers
+Preferred approach: Deploy open-source LLM (Ollama + Llama3/Mistral) on government server — zero data egress
+Separate database for: RTI content (sensitive) vs analysis output (less sensitive) vs audit log (critical)
+Encryption at rest for all RTI content. TLS for all API communication.
+Access Control:
+Role-based access: PIO sees recommendations + can accept/reject. Admin sees audit logs. Developer sees metrics only.
+No public access to the system. Internal network only.
+All PIO actions logged with user ID, timestamp, IP address, action taken
+No bulk data export capability without senior authorization
+The RTI-About-This-System Risk:
+An RTI Can Be Filed Asking for This System's Technical Details
+Under the RTI Act, a citizen can file an RTI asking:
+- 'What AI system does CHiPS use for processing RTI applications?'
+- 'What is the source code / algorithm of the RTI processing AI?'
+- 'What training data was used?'
+
+This is NOT hypothetical. RTIs about government AI systems have already been filed in India.
+System architecture documentation may be disclosable under RTI (it is government data).
+Design the system with the assumption that its architecture may become public.
+Never store security vulnerabilities, API keys, or sensitive infrastructure data in any
+indexed corpus — these would become disclosable if the corpus is revealed.
+
+12. IMPLEMENTATION ROADMAP
+Phase
+Timeline
+Deliverables
+Success Criteria
+Phase 0
+Days 1-3
+MVP: OCR pipeline + Department routing only (Agent 1) + basic UI
+Routing accuracy > 80% on 20 test RTIs
+Phase 1
+Week 2
+Information extractor (Agent 2) + Rule-based exemption engine + Annotation UI for PIO
+Extractor schema accuracy > 90% on 30 test RTIs
+Phase 2
+Week 3
+LLM exemption analyzer (Agent 3) + RAG over legal corpus + Hindi language testing
+Exemption recall > 85% on annotated test set
+Phase 3
+Week 4
+Disclosure Balancer (Agent 4) + Recommendation Engine (Agent 5) + Full audit trail
+False rejection rate < 8% on test set
+Phase 4
+Month 2
+PIO feedback loop + annotation pipeline + confidence calibration + bilingual parity testing
+Hindi/English routing gap < 5%
+Phase 5
+Month 3+
+Fine-tuned routing classifier (if enough annotated data) + CIC precedent database + performance dashboard
+Routing accuracy > 92% overall
+
+13. MVP VERSION — 3-DAY BUILD PLAN
+What to Build in 3 Days (and What NOT to Build)
+Day-by-Day MVP Scope
+DAY 1 — Data + Infrastructure:
+  - Set up Ollama locally (Mistral 7B or Llama3 8B) — free, runs on government server
+  - Set up Qdrant or ChromaDB — free vector database
+  - Download and chunk RTI Act text (section-aware chunking)
+  - Build department-function JSON mapping for Chhattisgarh (30 departments)
+  - Deliverable: LLM running locally + department JSON ready
+
+DAY 2 — Routing Agent:
+  - Build OCR pipeline (Tesseract + pytesseract) for PDF/image RTIs
+  - Build Agent 1 (jurisdiction classifier) with embedding similarity + LLM fallback
+  - Embed department-function corpus into Qdrant
+  - Test on 10 sample RTI applications
+  - Deliverable: Working routing agent with confidence scores
+
+DAY 3 — UI + Audit:
+  - Build minimal Streamlit UI: paste RTI text → get department recommendation
+  - Show: department name + confidence + reasoning + section reference
+  - Show: 'PIO must verify this recommendation' warning on every output
+  - Log every query to SQLite with timestamp + input + output
+  - Deliverable: Usable MVP that the PIO can demo and provide feedback on
+ 
+What NOT to Build in the 3-Day MVP
+DO NOT build exemption analysis in 3 days — an incomplete exemption engine gives
+dangerously wrong legal recommendations. A routing assistant with no legal analysis
+is SAFER than a legal analysis engine that is 50% complete.
+
+DO NOT build a recommendation engine in 3 days.
+DO NOT build any auto-execution of recommendations.
+DO NOT build any system that communicates directly with applicants.
+DO NOT expose the system outside the government network even for the demo.
+
+14. FINAL TECHNICAL RECOMMENDATION
+All-Free Technology Stack
+Component
+Recommended Tool
+Alternative
+Why Free Matters
+LLM
+Ollama + Mistral 7B / Llama3 8B
+Groq API free tier
+Government data stays on-premise
+Embeddings
+multilingual-e5-large (local)
+LaBSE via HuggingFace
+Hindi support, no API cost
+Vector DB
+Qdrant (Docker, free)
+ChromaDB (dev only)
+Production-ready, hybrid search
+OCR
+Tesseract + pytesseract
+EasyOCR (better Hindi)
+On-premise, no data egress
+Agent Orchestration
+LangGraph (free, open source)
+LangChain legacy chains
+Stateful agents, built-in checkpointing
+UI
+Streamlit (free)
+Gradio
+Fastest to build, PIO-friendly
+Monitoring
+Langfuse (self-hosted, free)
+MLflow (local)
+Full trace logging, GDPR compliant
+Database
+PostgreSQL (free)
+SQLite (MVP only)
+Audit log, RTI storage
+Rule Engine
+Python + Pydantic + custom rules
+No external tool needed
+Deterministic, auditable, free
+ 
+The 5 Non-Negotiable Architectural Principles
+These Are Not Suggestions — They Are Legal Requirements
+1. HUMAN FINAL DECISION: The PIO must click an explicit 'I take responsibility for this
+   decision' confirmation before any recommendation is finalized. This is not UX.
+   It is the legal firewall between an AI tool and an autonomous AI decision-maker.
+
+2. IMMUTABLE AUDIT TRAIL: Every query, every retrieval, every agent output, every PIO
+   decision is logged in an append-only, hash-chained audit log. This is your defense
+   in a CIC hearing. Without this, the system cannot be deployed in a legal context.
+
+3. CITATION GROUNDING: The system NEVER cites a legal section or CIC order that was
+   not retrieved from the corpus. Hallucinated legal citations are not just wrong —
+   they are potentially fraudulent in a government context.
+
+4. ADVERSARIAL BALANCE: For every rejection recommendation, the system must show
+   the strongest available disclosure argument. The PIO must see both sides.
+   A system that only finds reasons to reject is not a legal assistant — it is a bias engine.
+
+5. GRACEFUL DEGRADATION: When confidence is low (< 0.70), the system does NOT give
+   a recommendation. It says: 'Analysis confidence is insufficient for a recommendation.
+   This case requires PIO judgment or legal consultation.' Uncertain AI silence is
+   safer than uncertain AI confidence in a legal context.
+ 
+The Architect's Final Honest Assessment
+What Will Make This System Succeed or Fail
+This system will succeed if:
+  - The PIO uses it as a thinking tool, not an answer machine
+  - The annotation pipeline captures every override from Day 1
+  - The false rejection rate is tracked as obsessively as routing accuracy
+  - The MVP scope is ruthlessly limited to routing only
+  - Legal review of the exemption rules is done by a qualified RTI practitioner
+
+This system will fail if:
+  - Exemption analysis is built in Week 1 without adequate testing
+  - The PIO skips review because the confidence score is high
+  - Hindi RTI accuracy is not separately tracked and validated
+  - The audit trail is incomplete and a CIC case reveals unexplained recommendations
+  - The system is exposed to applicants or used to auto-draft responses
+
+The highest-value thing this system can do in Month 1:
+  Correctly route 95% of RTIs to the right department and save the PIO
+  the 30-minute manual review required to identify jurisdiction.
+  That alone justifies the build. Everything else is Phase 2.
+
+— Principal GenAI Architect's Assessment, CHiPS RTI Intelligence System

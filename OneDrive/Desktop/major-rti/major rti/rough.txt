@@ -1,0 +1,101 @@
+\scratch\verify_phase1.py === STARTING PHASE 1 EXTRACTION & EXEMPTION VERIFICATION ===
+
+--- Test Case 1: Personal data request --- RTI Input: Please provide the service book and medical records of employee Ramesh Kumar, who works as a senior assistant. Running Extractor (Agent 2)... Classified Info Type: employee Systems Detected: [] Procurement Status: none Personal Data: True Public Interest Override: False Entities: [] Explanation: The user is requesting personal records (service book and medical records) of a specific employee (Ramesh Kumar). Running Exemption Engine (Agent 3 - Layer A)...
+
+Triggered: Section 8(1)(j) (Personal Information & Privacy) Reasoning: Requested information involves personal records, private files, or employee documents. Information type classified as 'employee'. PIO Action: Recommend REDACTION under Section 10 (Severability) for all personal identifiers, contact info, and third-party private data. Disclose only if a larger public interest is proven.
+--- Test Case 2: Active tender query --- RTI Input: Please provide the bid details, pricing, and tender evaluation files for the ongoing e-District system modernization tender which is currently active and open for bidding. Running Extractor (Agent 2)... Classified Info Type: procurement Systems Detected: ['e-District'] Procurement Status: active_tender Personal Data: False Public Interest Override: False Entities: [] Explanation: The request asks for details of an ongoing procurement tender (e-District system modernization) that is currently active and open for bidding. Running Exemption Engine (Agent 3 - Layer A)...
+
+Triggered: Section 8(1)(d) (Commercial Confidence / Active Tenders) Reasoning: RTI request references an active/ongoing procurement tender or commercial bidding process. PIO Action: Recommend temporary REJECTION. Disclosure of active bidding details may harm the competitive position of third parties and prejudice the government's procurement process. Re-evaluate once the tender is completed.
+--- Test Case 3: Cybersecurity request --- RTI Input: Please provide the firewall configuration files, system architecture diagram, and network IP routing tables for the core database server of CHiPS. Running Extractor (Agent 2)... Classified Info Type: cybersecurity Systems Detected: ['core database server'] Procurement Status: none Personal Data: False Public Interest Override: False Entities: [] Explanation: The user is asking for firewall configuration, system architecture, and network routing tables, which are related to cybersecurity and IT network infrastructure. Running Exemption Engine (Agent 3 - Layer A)...
+
+Triggered: Section 8(1)(a) (Security & Scientific/Economic Interests) Reasoning: Requested information contains cybersecurity/architecture elements. Reference to system/term: 'cybersecurity'. PIO Action: Recommend REJECTION or strict REDACTION of technical specifications, passwords, architecture diagrams, or IP addresses to prevent security vulnerability disclosure.
+--- Test Case 4: Procurement query with corruption allegation --- RTI Input: Please provide details of active tender T-8787. I am requesting this because there is a severe corruption scandal and bribe allegations involving the selection committee. Running Extractor (Agent 2)... Classified Info Type: procurement Systems Detected: [] Procurement Status: active_tender Personal Data: False Public Interest Override: True Entities: ['Ref Number: t-8787'] Explanation: The user is asking for details about an active tender (T-8787) and has explicitly alleged corruption and bribery. Running Exemption Engine (Agent 3 - Layer A)...
+
+Triggered: Section 8(1)(d) (Commercial Confidence / Active Tenders) Reasoning: RTI request references an active/ongoing procurement tender or commercial bidding process. PIO Action: Recommend temporary REJECTION. Disclosure of active bidding details may harm the competitive position of third parties and prejudice the government's procurement process. Re-evaluate once the tender is completed. [OVERRIDE WARNING]: Section 8(2) Public Interest Override is ACTIVE: The RTI request contains allegations of corruption or human rights violations. Under the RTI Act, public interest in disclosure may outweigh the harm to protected interests, potentially overriding Section 8(1) exemptions.
+--- Test Case 5: Third-party commercial query --- RTI Input: Please provide the proprietary pricing models and corporate tax returns submitted to CHiPS by Tech Mahindra in commercial confidence during their partnership. Running Extractor (Agent 2)... Classified Info Type: third_party_commercial Systems Detected: [] Procurement Status: none Personal Data: False Public Interest Override: False Entities: [] Explanation: The request asks for proprietary pricing models and corporate tax returns submitted by a third party (Tech Mahindra) in commercial confidence. Running Exemption Engine (Agent 3 - Layer A)...
+
+Triggered: Section 11 (Third-Party Information Notice Requirement) Reasoning: RTI request asks for commercial information, pricing tables, or proprietary data provided in confidence by a third party. PIO Action: Mandatory Procedure: Trigger Section 11 notice to the concerned third party. The PIO must write to them within 5 days of receipt of the request, allowing them 10 days to make representations before any decision is made.
+=== VERIFICATION COMPLETE ===..............
+
+
+
+
+.....................................................................................
+
+otification: Background task 75ad0cf2-f748-42f8-82da-c8931a2190ad/task-339 has completed. Exit code: 0 Log content: C:\Users\hp\anaconda3\python.exe notebooks/verify_routing.py . : File C:\Users\hp\OneDrive\Documents\WindowsPowerShell\profile.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170. At line:1 char:3
+
+. 'C:\Users\hp\OneDrive\Documents\WindowsPowerShell\profile.ps1'
+
+
++ CategoryInfo          : SecurityError: (:) [], PSSecurityException
++ FullyQualifiedErrorId : UnauthorizedAccess
+Tesseract OCR is NOT available. Image OCR will be disabled; only pdfplumber text extraction will work.
+RTI Intelligence System — Routing Accuracy Benchmark Timestamp: 2026-06-03T00:23:17.391295
+Loaded 15 test RTI applications.
+
+--- Test 1/15 --- Language: hi Expected: revenue Text: सेवा में, लोक सूचना अधिकारी राजस्व विभाग, छत्तीसगढ़ शासन महोदय, मुझे मेरे ग्राम ... Predicted: revenue (HIGH) Reasoning: Keyword pass: top match 'revenue' (score=0.96, keywords=['revenue(name)']) | Embedding pass: top match 'revenue' (combined=0.97, emb_sim=0.9765) | Transfer under Section 6(3) applicable — 'revenue' is not CHiPS. Status: [CORRECT]
+
+--- Test 2/15 --- Language: en Expected: chips Text: Please provide the list of all IT projects managed by CHiPS in Chhattisgarh d... Predicted: chips (HIGH) Reasoning: Keyword pass: top match 'chips' (score=0.98, keywords=['chips(name)']) | Embedding pass: top match 'chips' (combined=0.97, emb_sim=0.9632) | Transfer under Section 6(3) applicable — 'chips' is not CHiPS. Status: [CORRECT]
+
+--- Test 3/15 --- Language: hi Expected: chips Text: छत्तीसगढ़ ई-डिस्ट्रिक्ट पोर्टल के माध्यम से जाति प्रमाण पत्र जारी करने की प्रक्... Predicted: chips (HIGH) Reasoning: Keyword pass: top match 'chips' (score=0.96, keywords=['chips(name)']) | Embedding pass: top match 'chips' (combined=0.93, emb_sim=0.9103) | Transfer under Section 6(3) applicable — 'chips' is not CHiPS. Status: [CORRECT]
+
+--- Test 4/15 --- Language: hi Expected: forest Text: महोदय, कृपया वन विभाग द्वारा रायगढ़ जिले में वित्तीय वर्ष 2023-24 में किए गए वृ... Predicted: forest (HIGH) Reasoning: Keyword pass: top match 'forest' (score=0.96, keywords=['forest(name)']) | Embedding pass: top match 'forest' (combined=0.97, emb_sim=0.9723) | Transfer under Section 6(3) applicable — 'forest' is not CHiPS. Status: [CORRECT]
+
+--- Test 5/15 --- Language: hi Expected: urban Text: मेरे नगर पंचायत क्षेत्र में सड़क निर्माण और सफाई व्यवस्था के लिए आवंटित बजट और ख... Predicted: urban (HIGH) Reasoning: Keyword pass: top match 'urban' (score=0.94, keywords=['urban(name)']) | Embedding pass: top match 'urban' (combined=0.94, emb_sim=0.9317) | Transfer under Section 6(3) applicable — 'urban' is not CHiPS. Status: [CORRECT]
+
+--- Test 6/15 --- Language: hi Expected: home Text: सेवा में, जन सूचना अधिकारी पुलिस मुख्यालय, रायपुर विषय: रायपुर शहर में सीसीटीवी... Predicted: home (HIGH) Reasoning: Keyword pass: top match 'home' (score=0.96, keywords=['home(name)']) | Embedding pass: top match 'home' (combined=0.93, emb_sim=0.9082) | Transfer under Section 6(3) applicable — 'home' is not CHiPS. Status: [CORRECT]
+
+--- Test 7/15 --- Language: hi Expected: food Text: जन सूचना अधिकारी खाद्य एवं नागरिक आपूर्ति विभाग, छत्तीसगढ़ विषय: राशन कार्ड सूच... Predicted: food (HIGH) Reasoning: Keyword pass: top match 'food' (score=0.96, keywords=['food(name)']) | Embedding pass: top match 'food' (combined=0.96, emb_sim=0.9576) | Transfer under Section 6(3) applicable — 'food' is not CHiPS. Status: [CORRECT]
+
+--- Test 8/15 --- Language: hi Expected: finance Text: महोदय, छत्तीसगढ़ वित्त विभाग द्वारा राज्य कर्मचारियों के महंगाई भत्ते (DA) के स... Predicted: finance (HIGH) Reasoning: Keyword pass: top match 'finance' (score=0.96, keywords=['finance(name)']) | Embedding pass: top match 'finance' (combined=0.96, emb_sim=0.9616) | Transfer under Section 6(3) applicable — 'finance' is not CHiPS. Status: [CORRECT]
+
+--- Test 9/15 --- Language: hi Expected: wcd Text: महोदय, महिला एवं बाल विकास विभाग द्वारा संचालित मुख्यमंत्री सुपोषण योजना के तहत... Predicted: wcd (HIGH) Reasoning: Keyword pass: top match 'wcd' (score=0.96, keywords=['wcd(name)']) | Embedding pass: top match 'wcd' (combined=0.96, emb_sim=0.9592) | Transfer under Section 6(3) applicable — 'wcd' is not CHiPS. Status: [CORRECT]
+
+--- Test 10/15 --- Language: hi Expected: revenue Text: सेवा में, जन सूचना अधिकारी, भू-अभिलेख कार्यालय। मेरे खसरा नंबर 124/2 की डिजिटल ह... Predicted: revenue (HIGH) Reasoning: Keyword pass: top match 'revenue' (score=0.74, keywords=['revenue(name)']) | Embedding pass: top match 'revenue' (combined=0.88, emb_sim=0.9702) | Transfer under Section 6(3) applicable — 'revenue' is not CHiPS. Status: [CORRECT]
+
+--- Test 11/15 --- Language: hi Expected: chips Text: महोदय, छत्तीसगढ़ ई-डिस्ट्रिक्ट पोर्टल (e-District portal) पर ऑनलाइन आवेदन करते... Predicted: chips (HIGH) Reasoning: Keyword pass: top match 'chips' (score=0.96, keywords=['chips(name)']) | Embedding pass: top match 'chips' (combined=0.94, emb_sim=0.9168) | Transfer under Section 6(3) applicable — 'chips' is not CHiPS. Status: [CORRECT]
+
+--- Test 12/15 --- Language: hi Expected: forest Text: रायगढ़ वन मंडल के अंतर्गत तेंदूपत्ता संग्राहकों को वर्ष 2023 के भुगतान की वर्तमान... Predicted: forest (HIGH) Reasoning: Keyword pass: top match 'forest' (score=0.55, keywords=['forest(name)']) | Embedding pass: top match 'forest' (combined=0.80, emb_sim=0.9712) | Transfer under Section 6(3) applicable — 'forest' is not CHiPS. Status: [CORRECT]
+
+--- Test 13/15 --- Language: hi Expected: finance Text: लोक सूचना अधिकारी, छत्तीसगढ़ शासन वित्त विभाग, नया रायपुर। महोदय, सातवें वेतन आ... Predicted: finance (HIGH) Reasoning: Keyword pass: top match 'finance' (score=0.96, keywords=['finance(name)']) | Embedding pass: top match 'finance' (combined=0.97, emb_sim=0.9723) | Transfer under Section 6(3) applicable — 'finance' is not CHiPS. Status: [CORRECT]
+
+--- Test 14/15 --- Language: hi Expected: revenue Text: जन सूचना अधिकारी, राजस्व मंडल कार्यालय, बिलासपुर। मेरे पिताजी के नाम दर्ज भूमि क... Predicted: revenue (HIGH) Reasoning: Keyword pass: top match 'revenue' (score=0.96, keywords=['revenue(name)']) | Embedding pass: top match 'revenue' (combined=0.97, emb_sim=0.9841) | Transfer under Section 6(3) applicable — 'revenue' is not CHiPS. Status: [CORRECT]
+
+--- Test 15/15 --- Language: hi Expected: pwd Text: सेवा में, जन सूचना अधिकारी, लोक निर्माण विभाग (PWD), छत्तीसगढ़ शासन, रायपुर। रा... Predicted: pwd (HIGH) Reasoning: Keyword pass: top match 'pwd' (score=0.96, keywords=['pwd(name)']) | Embedding pass: top match 'pwd' (combined=0.98, emb_sim=0.9882) | Transfer under Section 6(3) applicable — 'pwd' is not CHiPS. Status: [CORRECT]
+
+====================================================================== BENCHMARK RESULTS
+Overall Accuracy: 100.0% (15/15) English Accuracy: 100.0% (1/1) Hindi Accuracy: 100.0% (14/14) Bilingual Parity: 0.0% gap
+
+THRESHOLD CHECKS: [PASS] Overall accuracy (100.0%) meets threshold (80.0%) [PASS] Bilingual parity gap (0.0%) within threshold (5.0%)
+
+Confidence Distribution: HIGH=15, MEDIUM=0, LOW=0
+
+Results saved to: c:\Users\hp\OneDrive\Desktop\dummy\data\benchmark_results.json
+
+
+/./..............................................................................................
+
+
+: C:\Users\hp\anaconda3\python.exe notebooks/verify_phase2_3.py . : File C:\Users\hp\OneDrive\Documents\WindowsPowerShell\profile.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170. At line:1 char:3
+
+. 'C:\Users\hp\OneDrive\Documents\WindowsPowerShell\profile.ps1'
+
+
++ CategoryInfo          : SecurityError: (:) [], PSSecurityException
++ FullyQualifiedErrorId : UnauthorizedAccess
+Tesseract OCR is NOT available. Image OCR will be disabled; only pdfplumber text extraction will work. RTI Text: Please provide the private medical records, bank details, and service files of employee Ramesh Kumar.
+
+--- Running Agent 1 (Jurisdiction Routing) --- Primary Dept: chips (MEDIUM)
+
+--- Running Agent 2 (Information Extraction) --- INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK" Info Type: employee Personal Data: True
+
+--- Running Agent 3 - Layer A (Exemption Triggers) --- Triggered Rule Flags: ['Section 8(1)(j)']
+
+--- Running Agent 3 - Layer B (LLM Exemption Analyzer via RAG) --- INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK" INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK" Overall Explanation: The request seeks personal information of employee Ramesh Kumar, specifically medical records, bank details, and service files. This category of information falls under Section 8(1)(j) of the RTI Act. The exemption is applicable because disclosing such personal data is considered an unwarranted invasion of the individual's privacy and has no relationship to any public activity or interest.
+
+Section 8(1)(j) (is_applicable: True, conf: 0.95) Reasoning: The request seeks private medical records, bank details, and service files of a specific employee, Ramesh Kumar. This information is personal and its disclosure would cause an unwarranted invasion of his privacy. Under Section 8(1)(j), there is no obligation to provide such details unless the larger public interest justifies the disclosure, which is not indicated here. Quotes: ['information which relates to personal information the disclosure of which has no relationship to any public activity or interest', 'would cause unwarranted invasion of the privacy of the individual']
+--- Running Agent 4 (Adversarial Disclosure Balancer) --- INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK" INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK" Pro-Disclosure argument: While the records contain personal details, transparency regarding employee service and public salary elements is a matter of public accountability. Under Section 10 of the RTI Act, severability can be applied to redact private bank details and medical files, allowing for the disclosure of basic designation, salary scale, and general service details to fulfill transparency. Pro-Exemption argument: Disclosing individual bank account details, private medical files, and detailed personal files of Ramesh Kumar constitutes an unwarranted invasion of privacy. Section 8(1)(j) specifically exempts such personal records from disclosure as they serve no public interest or activity, and exposing them poses financial and physical safety risks to the individual. Weighing factors: The PIO must balance the individual's right to privacy (specifically concerning bank details and medical files) against the public interest in employee accountability. Severability under Section 10 should be used to disclose non-sensitive service details while keeping personal private information exempt.
+
+--- Running Agent 5 (Recommendation Generator) --- INFO:httpx:HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK" Recommended Action: PARTIALLY_APPROVE (MEDIUM) Reasoning: The target jurisdiction falls under CHiPS. The request seeks employee personal data, which is protected under Section 8(1)(j). The pro-disclosure and pro-exemption analysis indicates that while private bank and medical details must be withheld, general service records (designation, salary scale) can be severed and disclosed. Therefore, a partial approval is recommended. Citations: ['Section 8(1)(j)', 'Section 10'] Suggested Timeline Action: Apply Section 10 (Severability) to redact private bank details and medical files of employee Ramesh Kumar, and disclose general service history within 30 days of receipt. Disclosure Risk: Potential breach of privacy regarding Ramesh Kumar's financial and health information if disclosed without redaction. Rejection Risk: Risk of wrongful total rejection of public aspects of the service record, which may trigger a penalty under Section 20(1) of the RTI Act.
+
+=== PIPELINE VERIFICATION SUCCESS ===
