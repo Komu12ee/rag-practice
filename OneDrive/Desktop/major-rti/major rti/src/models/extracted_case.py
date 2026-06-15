@@ -14,27 +14,51 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-VALID_OUTCOMES = {"APPEAL_ALLOWED", "REJECTED", "PARTIAL", "PENALTY"}
-VALID_SOURCES = {"CIC", "SIC"}
+VALID_OUTCOMES = {"APPEAL_ALLOWED", "APPEAL_DISPOSED", "REJECTED", "PARTIAL", "PENALTY"}
+VALID_SOURCES = {"CIC", "SIC", "COURT", "CIRCULAR", "RTI_ACT", "PREVIOUS_RTI"}
 
 
 class ExtractedCase(BaseModel):
     """Structured metadata extracted from a segmented CIC/SIC decision."""
 
     case_number: str
+    commission: Optional[str] = None
     appeal_number: Optional[str] = None
     decision_date: Optional[str] = None
     hearing_date: Optional[str] = None
     commissioner_name: Optional[str] = None
     appellant_name: Optional[str] = None
     respondent_name: Optional[str] = None
+    public_authority: Optional[str] = None
     department: Optional[str] = None
     ministry: Optional[str] = None
     cpio_name: Optional[str] = None
     faa_name: Optional[str] = None
+    rti_application_date: Optional[str] = None
+    cpio_reply_date: Optional[str] = None
+    first_appeal_date: Optional[str] = None
+    faa_order_date: Optional[str] = None
+    second_appeal_date: Optional[str] = None
+    facts: Optional[str] = None
+    information_requested: list[str] = Field(default_factory=list)
+    grounds_for_appeal: Optional[str] = None
     rti_request_summary: Optional[str] = None
     sections_invoked: list[str] = Field(default_factory=list)
+    rti_sections: list[str] = Field(default_factory=list)
+    exemption_sections: list[str] = Field(default_factory=list)
+    court_references: list[str] = Field(default_factory=list)
+    circular_references: list[str] = Field(default_factory=list)
+    commission_observations: list[str] = Field(default_factory=list)
+    final_order: Optional[str] = None
     outcome: Optional[str] = None
+    reasoning_pattern: list[str] = Field(default_factory=list)
+    pio_learning_signal: Optional[str] = None
+    entities: list[str] = Field(default_factory=list)
+    entities_person: list[str] = Field(default_factory=list)
+    entities_authority: list[str] = Field(default_factory=list)
+    entities_department: list[str] = Field(default_factory=list)
+    entities_location: list[str] = Field(default_factory=list)
+    precedent_chunk: Optional[str] = None
     penalty_imposed: bool = False
     penalty_amount: Optional[int] = None
     key_findings: list[str] = Field(default_factory=list)
@@ -51,17 +75,29 @@ class ExtractedCase(BaseModel):
 
     @field_validator(
         "appeal_number",
+        "commission",
         "decision_date",
         "hearing_date",
+        "rti_application_date",
+        "cpio_reply_date",
+        "first_appeal_date",
+        "faa_order_date",
+        "second_appeal_date",
         "commissioner_name",
         "appellant_name",
         "respondent_name",
+        "public_authority",
         "department",
         "ministry",
         "cpio_name",
         "faa_name",
+        "facts",
+        "grounds_for_appeal",
         "rti_request_summary",
+        "final_order",
         "outcome",
+        "pio_learning_signal",
+        "precedent_chunk",
         mode="before",
     )
     @classmethod
@@ -71,7 +107,15 @@ class ExtractedCase(BaseModel):
         text = str(value).strip()
         return text or None
 
-    @field_validator("decision_date", "hearing_date")
+    @field_validator(
+        "decision_date",
+        "hearing_date",
+        "rti_application_date",
+        "cpio_reply_date",
+        "first_appeal_date",
+        "faa_order_date",
+        "second_appeal_date",
+    )
     @classmethod
     def _normalize_iso_date(cls, value: Optional[str]) -> Optional[str]:
         if not value:
@@ -108,6 +152,55 @@ class ExtractedCase(BaseModel):
                 seen.add(text.lower())
         return sections
 
+    @field_validator("rti_sections", "exemption_sections", mode="before")
+    @classmethod
+    def _normalize_section_lists(cls, value) -> list[str]:
+        return cls._normalize_generic_list(value, section_mode=True)
+
+    @field_validator(
+        "information_requested",
+        "court_references",
+        "circular_references",
+        "commission_observations",
+        "entities",
+        "entities_person",
+        "entities_authority",
+        "entities_department",
+        "entities_location",
+        "reasoning_pattern",
+        mode="before",
+    )
+    @classmethod
+    def _normalize_text_lists(cls, value) -> list[str]:
+        return cls._normalize_generic_list(value, section_mode=False)
+
+    @staticmethod
+    def _normalize_generic_list(value, section_mode: bool = False) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            raw_items = re.split(r"[,;\n]+", value)
+        else:
+            raw_items = list(value)
+
+        items: list[str] = []
+        seen: set[str] = set()
+        for item in raw_items:
+            text = str(item).strip()
+            if section_mode:
+                text = re.sub(r"(?i)^section\s+", "", text)
+                text = re.sub(r"\s+", "", text)
+            else:
+                text = re.sub(r"\s+", " ", text)
+            text = text.strip(" -•\t\n.")
+            if not text:
+                continue
+            key = text.lower()
+            if key not in seen:
+                items.append(text)
+                seen.add(key)
+        return items
+
     @field_validator("outcome")
     @classmethod
     def _normalize_outcome(cls, value: Optional[str]) -> Optional[str]:
@@ -121,6 +214,11 @@ class ExtractedCase(BaseModel):
             "DISMISSED": "REJECTED",
             "REJECTED": "REJECTED",
             "DENIED": "REJECTED",
+            "DISPOSED": "APPEAL_DISPOSED",
+            "APPEAL_DISPOSED": "APPEAL_DISPOSED",
+            "APPEAL_DISPOSED_NO_INTERVENTION": "APPEAL_DISPOSED",
+            "NO_INTERVENTION": "APPEAL_DISPOSED",
+            "NO_INTERFERENCE_REQUIRED": "APPEAL_DISPOSED",
             "PARTLY_ALLOWED": "PARTIAL",
             "PARTIALLY_ALLOWED": "PARTIAL",
             "PARTIAL": "PARTIAL",

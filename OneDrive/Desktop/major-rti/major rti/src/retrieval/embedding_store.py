@@ -217,13 +217,28 @@ class EmbeddingStore:
     @staticmethod
     def _metadata_for_chunk(chunk: LegalChunk) -> dict[str, Any]:
         """Chroma metadata values must be scalar primitives."""
+        rich = dict(chunk.metadata or {})
+        def scalar(value: Any) -> str:
+            if value is None:
+                return ""
+            if isinstance(value, (list, tuple, set)):
+                return ", ".join(str(item) for item in value if item is not None)
+            return str(value)
+
         return {
             "case_number": chunk.case_number,
             "source": chunk.source,
+            "source_type": scalar(rich.get("source_type") or chunk.source),
+            "section_name": scalar(rich.get("section_name")),
             "chunk_type": chunk.chunk_type,
             "decision_date": chunk.decision_date or "",
+            "date": scalar(rich.get("date") or chunk.decision_date),
             "outcome": chunk.outcome or "",
             "department": chunk.department or "",
+            "public_authority": scalar(rich.get("public_authority") or chunk.department),
+            "rti_sections": scalar(rich.get("rti_sections")),
+            "exemption_sections": scalar(rich.get("exemption_sections")),
+            "keywords": scalar(rich.get("keywords")),
             "commissioner": chunk.commissioner or "",
         }
 

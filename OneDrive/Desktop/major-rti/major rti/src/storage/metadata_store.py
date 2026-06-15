@@ -100,6 +100,52 @@ CREATE_INDEXES_SQL = [
     "CREATE INDEX IF NOT EXISTS idx_cases_source ON cases(source);",
 ]
 
+JSON_LIST_FIELDS = {
+    "sections_invoked",
+    "rti_sections",
+    "exemption_sections",
+    "information_requested",
+    "court_references",
+    "circular_references",
+    "commission_observations",
+    "entities",
+    "entities_person",
+    "entities_authority",
+    "entities_department",
+    "entities_location",
+    "reasoning_pattern",
+    "key_findings",
+}
+
+INTEGER_BOOL_FIELDS = {"penalty_imposed", "public_interest_discussed"}
+
+EXTRA_CASE_COLUMNS = {
+    "commission": "TEXT",
+    "public_authority": "TEXT",
+    "rti_application_date": "TEXT",
+    "cpio_reply_date": "TEXT",
+    "first_appeal_date": "TEXT",
+    "faa_order_date": "TEXT",
+    "second_appeal_date": "TEXT",
+    "facts": "TEXT",
+    "information_requested": "TEXT NOT NULL DEFAULT '[]'",
+    "grounds_for_appeal": "TEXT",
+    "rti_sections": "TEXT NOT NULL DEFAULT '[]'",
+    "exemption_sections": "TEXT NOT NULL DEFAULT '[]'",
+    "court_references": "TEXT NOT NULL DEFAULT '[]'",
+    "circular_references": "TEXT NOT NULL DEFAULT '[]'",
+    "commission_observations": "TEXT NOT NULL DEFAULT '[]'",
+    "final_order": "TEXT",
+    "reasoning_pattern": "TEXT NOT NULL DEFAULT '[]'",
+    "pio_learning_signal": "TEXT",
+    "entities": "TEXT NOT NULL DEFAULT '[]'",
+    "entities_person": "TEXT NOT NULL DEFAULT '[]'",
+    "entities_authority": "TEXT NOT NULL DEFAULT '[]'",
+    "entities_department": "TEXT NOT NULL DEFAULT '[]'",
+    "entities_location": "TEXT NOT NULL DEFAULT '[]'",
+    "precedent_chunk": "TEXT",
+}
+
 
 UPSERT_CASE_SQL = """
 INSERT INTO cases (
@@ -201,7 +247,7 @@ class MetadataStore:
         payload["updated_at"] = now
 
         with self._connect() as conn:
-            conn.execute(UPSERT_CASE_SQL, payload)
+            self._dynamic_upsert(conn, payload)
             conn.commit()
 
         self._write_case_json(case, payload["created_at"], payload["updated_at"])
@@ -324,9 +370,38 @@ class MetadataStore:
     def _init_schema(self) -> None:
         with self._connect() as conn:
             conn.execute(CREATE_CASES_TABLE_SQL)
+            self._ensure_extra_columns(conn)
             for sql in CREATE_INDEXES_SQL:
                 conn.execute(sql)
             conn.commit()
+
+    def _ensure_extra_columns(self, conn: sqlite3.Connection) -> None:
+        existing = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(cases)").fetchall()
+        }
+        for column, column_type in EXTRA_CASE_COLUMNS.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE cases ADD COLUMN {column} {column_type}")
+
+    def _dynamic_upsert(self, conn: sqlite3.Connection, payload: dict[str, Any]) -> None:
+        columns = [
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(cases)").fetchall()
+            if row["name"] in payload
+        ]
+        placeholders = ", ".join(f":{column}" for column in columns)
+        column_sql = ", ".join(columns)
+        updates = ", ".join(
+            f"{column} = excluded.{column}"
+            for column in columns
+            if column not in {"case_number", "created_at"}
+        )
+        sql = (
+            f"INSERT INTO cases ({column_sql}) VALUES ({placeholders}) "
+            f"ON CONFLICT(case_number) DO UPDATE SET {updates}"
+        )
+        conn.execute(sql, payload)
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -343,20 +418,22 @@ class MetadataStore:
     def _case_to_row(self, case: ExtractedCase) -> dict[str, Any]:
         data = case.model_dump()
         data["case_number"] = self._normalize_case_number(data["case_number"])
-        data["sections_invoked"] = json.dumps(data.get("sections_invoked", []), ensure_ascii=False)
-        data["key_findings"] = json.dumps(data.get("key_findings", []), ensure_ascii=False)
-        data["penalty_imposed"] = int(bool(data.get("penalty_imposed")))
-        data["public_interest_discussed"] = int(bool(data.get("public_interest_discussed")))
+        for field in JSON_LIST_FIELDS:
+            data[field] = json.dumps(data.get(field, []), ensure_ascii=False)
+        for field in INTEGER_BOOL_FIELDS:
+            data[field] = int(bool(data.get(field)))
         return data
 
     def _row_to_case(self, row: sqlite3.Row) -> ExtractedCase:
         data = dict(row)
         data.pop("created_at", None)
         data.pop("updated_at", None)
-        data["sections_invoked"] = json.loads(data.get("sections_invoked") or "[]")
-        data["key_findings"] = json.loads(data.get("key_findings") or "[]")
-        data["penalty_imposed"] = bool(data.get("penalty_imposed"))
-        data["public_interest_discussed"] = bool(data.get("public_interest_discussed"))
+        for field in JSON_LIST_FIELDS:
+            if field in data:
+                data[field] = json.loads(data.get(field) or "[]")
+        for field in INTEGER_BOOL_FIELDS:
+            if field in data:
+                data[field] = bool(data.get(field))
         return ExtractedCase(**data)
 
     def _write_case_json(self, case: ExtractedCase, created_at: str, updated_at: str) -> None:

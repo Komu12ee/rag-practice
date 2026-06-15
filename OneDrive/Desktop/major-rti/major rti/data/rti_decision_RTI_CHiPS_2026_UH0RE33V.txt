@@ -1,0 +1,508 @@
+Act as a senior Python/FastAPI engineer, RAG architect, and production code reviewer.
+
+You already audited my RTI Intelligence System and found that PDF text extraction works, but the project fails because the parser, metadata schema, chunking, retrieval, prompts, Sarvam generation, and reference display do not preserve enough legal intelligence from CIC/SIC/court PDFs.
+
+Now implement the repair carefully.
+
+## Important Rules
+
+* Do not rewrite the whole project.
+* Do not break existing APIs.
+* Make small, production-safe changes.
+* Write beginner-friendly code with comments.
+* Add logging and error handling.
+* Keep the system as a legal research assistant only.
+* Do not make final PIO decisions.
+* The final statutory decision remains with the PIO.
+
+---
+
+## Main Objective
+
+Fix the pipeline so that CIC/SIC/court PDFs are converted into structured legal intelligence and useful precedent references.
+
+The system must extract, store, retrieve, and display useful material from PDFs such as:
+
+* case number
+* commission
+* appellant
+* respondent
+* public authority
+* CPIO/PIO name
+* commissioner
+* RTI application date
+* CPIO reply date
+* first appeal date
+* FAA order date
+* second appeal date
+* hearing date
+* facts
+* information requested
+* grounds for appeal
+* RTI sections
+* exemption sections
+* court references
+* circular references
+* commission observations
+* final order
+* outcome
+* reasoning pattern
+* PIO learning signal
+* entities
+* precedent chunk
+
+---
+
+## Files To Modify First
+
+Focus mainly on:
+
+```text
+src/models/extracted_case.py
+src/pipeline/legal_segmenter.py
+src/pipeline/legal_extractor.py
+src/pipeline/legal_chunker.py
+src/storage/metadata_store.py
+src/retrieval/hybrid_retriever.py
+src/rag/context_assembler.py
+backend/main.py
+backend/sarvam_client.py
+frontend-react/src/components/steps/ResultStep.tsx
+```
+
+Supporting files may be changed only if required.
+
+---
+
+## Step 1: Expand ExtractedCase Schema
+
+Update `src/models/extracted_case.py`.
+
+Add fields for:
+
+```text
+commission
+public_authority
+rti_application_date
+cpio_reply_date
+first_appeal_date
+faa_order_date
+second_appeal_date
+hearing_date
+information_requested
+grounds_for_appeal
+court_references
+circular_references
+commission_observations
+final_order
+reasoning_pattern
+pio_learning_signal
+precedent_chunk
+entities_person
+entities_authority
+entities_department
+entities_location
+```
+
+Use safe defaults like empty strings or empty lists.
+
+Do not remove existing fields.
+
+---
+
+## Step 2: Improve CIC Segmentation
+
+Update `src/pipeline/legal_segmenter.py`.
+
+Add explicit detection for common CIC/SIC headings:
+
+```text
+File No
+In the matter of
+Dates
+Facts
+Grounds for Second Appeal
+Order
+Appellant
+Respondent
+During the hearing
+On perusal
+With the above observation
+Copies of the order
+```
+
+Do not rely only on exact headings.
+
+The segmenter should return cleaner sections:
+
+```text
+CASE_HEADER
+DATES_TABLE
+PARTIES
+FACTS
+INFORMATION_REQUESTED
+GROUNDS_FOR_APPEAL
+HEARING_SUBMISSIONS
+COMMISSION_OBSERVATIONS
+FINAL_ORDER
+```
+
+---
+
+## Step 3: Fix Legal Extraction
+
+Update `src/pipeline/legal_extractor.py`.
+
+Implement hybrid extraction:
+
+1. Normalize text.
+2. Extract stable metadata with regex.
+3. Extract date table using labels:
+
+   * RTI application
+   * CPIO reply
+   * First Appeal
+   * FAA Order
+   * Second Appeal
+   * Date of hearing
+4. Extract parties from `Appellant Vs Respondent` format.
+5. Extract public authority from respondent block.
+6. Extract information requested from Facts section.
+7. Extract grounds from Grounds section.
+8. Extract findings from Order section.
+9. Classify outcome.
+10. Generate reasoning pattern.
+11. Generate PIO learning signal.
+12. Generate precedent_chunk.
+
+Use this sample logic:
+
+```text
+If order contains "reply provided is just, proper and pointwise":
+reasoning_pattern = ["CPIO reply adequate", "Pointwise reply provided", "No intervention required"]
+
+If order contains "appellant was not present":
+reasoning_pattern includes "Appellant absent"
+
+If order contains "appeal is disposed":
+outcome = "Appeal disposed"
+```
+
+---
+
+## Step 4: Improve Chunking
+
+Update `src/pipeline/legal_chunker.py`.
+
+Create separate intelligence chunks:
+
+```text
+CASE_HEADER
+DATES_TABLE
+PARTIES
+INFORMATION_REQUESTED
+GROUNDS_FOR_APPEAL
+COMMISSION_OBSERVATION
+FINAL_ORDER
+PRECEDENT_SUMMARY
+PIO_LEARNING_SIGNAL
+ENTITY_CONTEXT
+```
+
+Each chunk must include rich metadata:
+
+```json
+{
+  "case_number": "...",
+  "source_type": "CIC_DECISION",
+  "section_name": "...",
+  "outcome": "...",
+  "public_authority": "...",
+  "date": "...",
+  "rti_sections": [],
+  "exemption_sections": [],
+  "reasoning_pattern": [],
+  "keywords": []
+}
+```
+
+Do not only chunk by token count.
+
+---
+
+## Step 5: Improve Retrieval and Ranking
+
+Update `src/retrieval/hybrid_retriever.py`.
+
+Improve ranking using:
+
+* semantic similarity
+* keyword match
+* RTI section match
+* exemption section match
+* department/public authority match
+* information type match
+* outcome match
+* reasoning pattern match
+
+Return compact reference cards:
+
+```json
+{
+  "source_type": "CIC_DECISION",
+  "case_number": "...",
+  "title": "...",
+  "public_authority": "...",
+  "outcome": "...",
+  "relevant_section": "...",
+  "passage": "...",
+  "why_relevant": "...",
+  "confidence": 0.87,
+  "metadata": {}
+}
+```
+
+Avoid unrelated cases even if lexical overlap exists.
+
+---
+
+## Step 6: Add Reference Retrieval Service
+
+Create a clean service if missing:
+
+```text
+src/retrieval/reference_retriever.py
+```
+
+It should power the frontend **+ Add Reference** button.
+
+Input:
+
+```json
+{
+  "raw_query": "...",
+  "extracted_parameters": {},
+  "department_hint": "CHiPS"
+}
+```
+
+Output:
+
+```json
+{
+  "references": [
+    {
+      "source_type": "CIC_DECISION",
+      "case_number": "...",
+      "passage": "...",
+      "why_relevant": "...",
+      "confidence": 0.87
+    }
+  ]
+}
+```
+
+Search across available indexed sources:
+
+* RTI Act
+* CIC decisions
+* SIC decisions
+* court judgments
+* circulars
+* previous RTI cases
+
+If some sources are not available yet, return an empty list with a clear log message, not an error.
+
+---
+
+## Step 7: Fix Prompt Language
+
+Update `src/rag/context_assembler.py`.
+
+Remove decision-making language:
+
+```text
+recommendation
+likely outcome
+recommended action
+final decision
+```
+
+Replace with:
+
+```text
+legal research synthesis
+precedent comparison
+possible RTI Act provisions for PIO review
+arguments for disclosure
+arguments against disclosure
+drafting assistance only
+PIO must independently decide
+```
+
+---
+
+## Step 8: Fix Sarvam Client
+
+Update `backend/sarvam_client.py`.
+
+Production requirements:
+
+* Remove any hardcoded API key.
+* Read `SARVAM_API_KEY` from environment.
+* If missing, fail safely with a clear error.
+* Add timeout.
+* Add retry.
+* Add structured logging.
+* Separate two modes:
+
+  1. structured extraction mode
+  2. draft generation mode
+
+Draft generation must use retrieved references and must include a legal disclaimer.
+
+---
+
+## Step 9: Update Backend APIs
+
+Update `backend/main.py`.
+
+Preserve existing APIs.
+
+Improve or add:
+
+```http
+POST /api/references
+POST /api/generate_draft_with_references
+```
+
+`/api/references` should call `reference_retriever.py`.
+
+`/api/generate_draft_with_references` should send:
+
+* raw RTI text
+* extracted parameters
+* RTI sections
+* retrieved references
+* department context
+
+to Sarvam and return a formal PIO draft.
+
+---
+
+## Step 10: Update Frontend
+
+Update `frontend-react/src/components/steps/ResultStep.tsx`.
+
+Remove static references section.
+
+Add:
+
+* `+ Add Reference` button
+* loading state: `Searching RTI Act, CIC/SIC and court references...`
+* compact reference cards
+* `Generate PIO Response with References` button
+
+Each card should show:
+
+```text
+source type
+case number/title
+public authority
+outcome
+short passage
+why relevant
+confidence
+```
+
+Do not show bulky raw references by default.
+
+---
+
+## Step 11: Add Tests
+
+Add tests for:
+
+```text
+sample CIC PDF parsing
+date table extraction
+party extraction
+information requested extraction
+outcome classification
+precedent chunk generation
+reference card formatting
+```
+
+Use the sample case:
+
+```text
+CIC/AAOIN/A/2017/102333
+```
+
+Expected results:
+
+```json
+{
+  "case_number": "CIC/AAOIN/A/2017/102333",
+  "appellant": "Sudesh Raghunath Gaikwad",
+  "respondent": "Airport Authority of India",
+  "rti_application_date": "10.03.2016",
+  "cpio_reply_date": "20.04.2016",
+  "first_appeal_date": "18.04.2016",
+  "second_appeal_date": "11.07.2016",
+  "hearing_date": "05.04.2018",
+  "outcome": "Appeal disposed",
+  "reasoning_pattern": [
+    "CPIO reply adequate",
+    "Pointwise reply provided",
+    "Appellant absent",
+    "No intervention required"
+  ]
+}
+```
+
+---
+
+## Step 12: Add CLI Script
+
+Add a simple CLI for beginner testing:
+
+```bash
+python src/pipelines/parse_legal_pdf.py --input path/to/sample.pdf --output parsed.json
+```
+
+The script should:
+
+1. read PDF/text
+2. parse structured fields
+3. validate output
+4. save JSON
+5. print a short summary
+
+---
+
+## Step 13: Reindexing Instructions
+
+After code changes, provide exact commands to regenerate data:
+
+```bash
+python src/pipelines/parse_legal_pdf.py --input data/cic --output data/parsed/cic
+python src/pipelines/index_pipeline.py --source data/parsed/cic --force
+python src/pipelines/query_pipeline.py --text "..." --type precedent_search --department-hint "CHiPS"
+```
+
+---
+
+## Final Response Required
+
+After making changes, report:
+
+1. Files changed.
+2. New files added.
+3. What was fixed.
+4. How to run.
+5. How to test.
+6. Expected JSON output.
+7. Any remaining limitations.
+
+Keep code production-ready and beginner-friendly.

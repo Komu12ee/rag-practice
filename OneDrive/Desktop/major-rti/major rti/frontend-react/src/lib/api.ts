@@ -9,6 +9,7 @@ import {
   LegalSection,
   ExemptionFlag,
   StatutoryReference,
+  RetrievedReference,
   BalancerOutput,
   Recommendation
 } from './types';
@@ -196,6 +197,41 @@ export async function generatePIODraft(params: {
   });
   if (!response.ok) {
     throw new Error(`Failed to generate draft: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function retrieveReferences(params: {
+  raw_text: string;
+  extracted_info: ExtractedInformation;
+  routing: RoutingResult;
+  evaluation: EvaluationResult;
+}): Promise<{ references: RetrievedReference[] }> {
+  const response = await fetch('/api/references', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    throw new Error(`reference retrieval failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function generateDraftWithReferences(params: {
+  raw_text: string;
+  extracted_info: ExtractedInformation;
+  routing: RoutingResult;
+  evaluation: EvaluationResult;
+  references: RetrievedReference[];
+}): Promise<{ draft: string; warning?: string }> {
+  const response = await fetch('/api/generate_draft_with_references', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) {
+    throw new Error(`reference-based draft generation failed: ${response.statusText}`);
   }
   return response.json();
 }

@@ -155,6 +155,38 @@ class GenerateDraftRequest(BaseModel):
     is_chips: bool
 
 
+class ReferenceRetrievalRequest(BaseModel):
+    raw_text: str
+    extracted_info: ExtractedInformationReact
+    routing: RoutingResultReact
+    evaluation: EvaluationResultReact
+
+
+class RetrievedReferenceReact(BaseModel):
+    source_type: str
+    title: str
+    case_number: str = ""
+    public_authority: str = ""
+    outcome: str = ""
+    relevant_section: str
+    extracted_passage: str
+    why_relevant: str
+    confidence_score: float
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ReferenceRetrievalResponse(BaseModel):
+    references: List[RetrievedReferenceReact]
+
+
+class GenerateDraftWithReferencesRequest(BaseModel):
+    raw_text: str
+    extracted_info: ExtractedInformationReact
+    routing: RoutingResultReact
+    evaluation: EvaluationResultReact
+    references: List[RetrievedReferenceReact]
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -496,6 +528,216 @@ async def legal_sections_endpoint():
             pass
     from legal_sections import get_hardcoded_sections
     return get_hardcoded_sections()
+
+
+def _src_path_ready() -> None:
+    src_dir = Path(__file__).resolve().parent.parent / "src"
+    if str(src_dir) not in sys.path:
+        sys.path.insert(0, str(src_dir))
+
+
+def _compact_text(value: str, limit: int = 520) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def _reference_source_type(source: str, chunk_type: str) -> str:
+    src = (source or "").upper()
+    chunk = (chunk_type or "").upper()
+    if "CIRCULAR" in src or "CIRCULAR" in chunk:
+        return "Department Circular"
+    if "SIC" in src:
+        return "SIC Decision"
+    if "COURT" in src or "HIGH" in src or "SUPREME" in src:
+        return "Court Judgment"
+    if "RTI_ACT" in src or "STATUTE" in src:
+        return "RTI Act, 2005"
+    if "PREVIOUS" in src:
+        return "Previous RTI Case"
+    return "CIC Decision" if "CIC" in src else "Legal Reference"
+
+
+def _section_from_text(text: str, fallback: str = "") -> str:
+    import re
+    patterns = [
+        r"(?i)\b(?:Section|Sec\.?|S\.|u/s)\s*(6\s*\(\s*3\s*\)|8\s*\(\s*1\s*\)\s*\(\s*[a-j]\s*\)|8\s*\(\s*2\s*\)|8\s*\(\s*1\s*\)|9|10|11|24|7\s*\(\s*1\s*\)|19\s*\(\s*1\s*\)|20\s*\(\s*1\s*\))",
+        r"(?i)\b(8\s*\(\s*1\s*\)\s*\(\s*[a-j]\s*\)|6\s*\(\s*3\s*\))\b",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text or "")
+        if match:
+            return " ".join(match.group(1).split())
+    return fallback
+
+
+def _build_reference_query(req: ReferenceRetrievalRequest) -> str:
+    sections = ", ".join(req.evaluation.final_recom.citations or [])
+    systems = ", ".join(req.extracted_info.systems or [])
+    entities = ", ".join(req.extracted_info.entities or [])
+    return (
+        f"{req.raw_text}\n"
+        f"Department: {req.routing.primary_department}\n"
+        f"Information type: {req.extracted_info.classification_type}\n"
+        f"Systems: {systems}\n"
+        f"Entities: {entities}\n"
+        f"Relevant RTI Act sections: {sections}"
+    ).strip()
+
+
+@app.post("/api/references", response_model=ReferenceRetrievalResponse)
+async def references_endpoint(req: ReferenceRetrievalRequest):
+    """Search legal/reference material only when the PIO explicitly asks for it."""
+    try:
+        references: List[RetrievedReferenceReact] = []
+
+        # Always include compact RTI Act analysis as statutory references when available.
+        for ref in req.evaluation.layer_b_res[:4]:
+            passage = " ".join(ref.exact_quotes[:2]) if ref.exact_quotes else ref.legal_reasoning
+            references.append(
+                RetrievedReferenceReact(
+                    source_type="RTI Act, 2005",
+                    title=f"Section {ref.section} - {ref.title}",
+                    case_number="",
+                    public_authority=req.routing.primary_department,
+                    outcome="",
+                    relevant_section=ref.section,
+                    extracted_passage=_compact_text(passage),
+                    why_relevant=_compact_text(ref.legal_reasoning, 260),
+                    confidence_score=max(0.0, min(1.0, float(ref.confidence_score or 0.0))),
+                    metadata={"source": "RTI_ACT"},
+                )
+            )
+
+        # Search indexed CIC/SIC/circular/case chunks through the production reference retriever.
+        try:
+            _src_path_ready()
+            from retrieval.reference_retriever import ReferenceRetriever
+
+            retriever = ReferenceRetriever()
+            cards = retriever.retrieve(
+                raw_text=req.raw_text,
+                extracted_parameters=req.extracted_info.dict(),
+                sections=req.evaluation.final_recom.citations,
+                department_context=req.routing.primary_department,
+                outcome_hint="",
+                limit=8,
+            )
+            seen_titles = {ref.title for ref in references}
+            for card in cards:
+                title = card.title_or_case_number
+                if title in seen_titles:
+                    continue
+                seen_titles.add(title)
+                references.append(
+                    RetrievedReferenceReact(
+                        source_type=card.source_type,
+                        title=title,
+                        case_number=card.case_number,
+                        public_authority=card.public_authority,
+                        outcome=card.outcome,
+                        relevant_section=card.relevant_section,
+                        extracted_passage=card.extracted_passage,
+                        why_relevant=card.why_relevant,
+                        confidence_score=card.confidence_score,
+                        metadata=card.metadata,
+                    )
+                )
+                if len(references) >= 8:
+                    break
+        except Exception as retrieval_error:
+            print(f"[Reference Retrieval] Corpus retrieval fallback used: {retrieval_error}")
+
+        return {"references": references[:8]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reference retrieval failed: {str(e)}")
+
+
+@app.post("/api/generate_draft_with_references")
+async def generate_draft_with_references_endpoint(req: GenerateDraftWithReferencesRequest):
+    """Generate a formal PIO draft using RTI text, extracted parameters, and on-demand references."""
+    try:
+        sections = req.evaluation.final_recom.citations or [flag.section for flag in req.evaluation.exemption_flags]
+        references_context = [
+            {
+                "source_type": ref.source_type,
+                "title": ref.title,
+                "case_number": ref.case_number,
+                "public_authority": ref.public_authority,
+                "outcome": ref.outcome,
+                "relevant_section": ref.relevant_section,
+                "extracted_passage": ref.extracted_passage,
+                "why_relevant": ref.why_relevant,
+                "confidence_score": ref.confidence_score,
+                "metadata": ref.metadata,
+            }
+            for ref in req.references
+        ]
+        params_context = {
+            "classification_type": req.extracted_info.classification_type,
+            "entities": req.extracted_info.entities,
+            "systems": req.extracted_info.systems,
+            "procurement_status": req.extracted_info.procurement_status,
+            "personal_data": req.extracted_info.personal_data,
+            "public_interest": req.extracted_info.public_interest,
+            "explanation": req.extracted_info.explanation,
+            "department": req.routing.primary_department,
+            "routing_reasoning": req.routing.reasoning,
+        }
+
+        prompt = f"""You are an RTI Legal Intelligence Assistant helping a Public Information Officer draft an official RTI reply.
+
+Generate a formal PIO draft response using the RTI Act, extracted parameters, department context, and retrieved references below.
+
+Mandatory constraints:
+1. Do not claim that the AI has made the final decision.
+2. Do not write "the system recommends" or present transfer/rejection/disclosure as an automated final decision.
+3. Use the retrieved references only as legal research support.
+4. Mention that final determination under the RTI Act, 2005 remains with the concerned PIO.
+5. Keep the tone suitable for an Indian government RTI reply.
+6. If references are not sufficient, say that the PIO should verify records and applicable provisions.
+7. Include only concise citations; do not dump bulky passages into the reply.
+
+RTI APPLICATION TEXT:
+{req.raw_text}
+
+EXTRACTED PARAMETERS:
+{json.dumps(params_context, ensure_ascii=False, indent=2)}
+
+RELEVANT RTI ACT SECTIONS FROM INITIAL ANALYSIS:
+{json.dumps(sections, ensure_ascii=False)}
+
+RETRIEVED REFERENCES:
+{json.dumps(references_context, ensure_ascii=False, indent=2)}
+"""
+
+        try:
+            from sarvam_client import call_sarvam_draft_generation
+            draft = call_sarvam_draft_generation(prompt)
+            return {"draft": draft}
+        except Exception as sarvam_error:
+            reference_lines = "\n".join(
+                f"- {ref.source_type}: {ref.title}"
+                + (f" | Section {ref.relevant_section}" if ref.relevant_section else "")
+                for ref in req.references[:5]
+            ) or "- No external references were retrieved."
+            fallback = (
+                "On examination of the RTI application:\n\n"
+                f"The request concerns {req.extracted_info.classification_type.replace('_', ' ')} information "
+                f"relating to {', '.join(req.extracted_info.systems or ['the stated records'])}. "
+                f"The concerned PIO may verify whether the requested records are held by {req.routing.primary_department} "
+                "and examine the applicable provisions of the RTI Act, 2005 before issuing the final reply.\n\n"
+                "The following references were retrieved for legal research assistance:\n"
+                f"{reference_lines}\n\n"
+                "This draft is prepared for legal research and drafting assistance only. The final decision under the RTI Act, 2005 remains the responsibility of the concerned PIO."
+            )
+            return {
+                "draft": fallback,
+                "warning": f"Sarvam AI was unavailable. A reference-aware fallback draft was generated. ({sarvam_error})",
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reference-based draft generation failed: {str(e)}")
 
 
 @app.post("/api/generate_draft")

@@ -33,6 +33,7 @@ for path in (SRC_DIR, PROJECT_ROOT):
         sys.path.insert(0, str(path))
 
 from models.extracted_case import ExtractedCase
+from pipeline.legal_document_parser import LegalDocumentParser
 from pipeline.legal_segmenter import LegalSegmenter, SegmentedDecision
 
 logger = logging.getLogger(__name__)
@@ -137,6 +138,12 @@ class LegalExtractor:
         }
 
     def _extract_regex(self, segmented: SegmentedDecision, source_file: str) -> dict[str, Any]:
+        rich_case = LegalDocumentParser().parse_text(
+            self._all_text(segmented),
+            source_file=source_file,
+        )
+        rich_data = rich_case.model_dump()
+
         header = segmented.HEADER or ""
         parties = segmented.PARTIES or ""
         findings = segmented.COMMISSION_FINDINGS or ""
@@ -156,22 +163,42 @@ class LegalExtractor:
 
         data: dict[str, Any] = {
             "case_number": case_number,
+            "commission": rich_data.get("commission"),
             "appeal_number": self._extract_appeal_number(header, case_number),
             "decision_date": self._extract_labelled_date(header, ("decision", "dated", "date of decision")) or self._extract_first_date(header),
-            "hearing_date": self._extract_labelled_date(header + "\n" + full_text[:2500], ("hearing", "date of hearing")),
-            "commissioner_name": self._extract_commissioner(header),
-            "appellant_name": self._extract_party_name(parties, "appellant") or self._extract_party_name(parties, "complainant"),
-            "respondent_name": self._extract_party_name(parties, "respondent"),
-            "department": self._extract_department(parties),
+            "hearing_date": self._extract_labelled_date(header + "\n" + full_text[:2500], ("hearing", "date of hearing")) or rich_data.get("hearing_date"),
+            "commissioner_name": self._extract_commissioner(header) or rich_data.get("commissioner_name"),
+            "appellant_name": self._extract_party_name(parties, "appellant") or self._extract_party_name(parties, "complainant") or rich_data.get("appellant_name"),
+            "respondent_name": self._extract_party_name(parties, "respondent") or rich_data.get("respondent_name"),
+            "public_authority": rich_data.get("public_authority"),
+            "department": self._extract_department(parties) or rich_data.get("department"),
             "ministry": self._extract_ministry(parties),
-            "cpio_name": self._extract_party_name(parties, "cpio") or self._extract_party_name(parties, "pio"),
-            "faa_name": self._extract_party_name(parties, "faa") or self._extract_party_name(parties, "first appellate authority"),
-            "rti_request_summary": self._summarize_request_regex(request),
-            "sections_invoked": sections,
-            "outcome": self._infer_outcome(full_text, penalty_imposed),
+            "cpio_name": self._extract_party_name(parties, "cpio") or self._extract_party_name(parties, "pio") or rich_data.get("cpio_name"),
+            "faa_name": self._extract_party_name(parties, "faa") or self._extract_party_name(parties, "first appellate authority") or rich_data.get("faa_name"),
+            "rti_application_date": rich_data.get("rti_application_date"),
+            "cpio_reply_date": rich_data.get("cpio_reply_date"),
+            "first_appeal_date": rich_data.get("first_appeal_date"),
+            "faa_order_date": rich_data.get("faa_order_date"),
+            "second_appeal_date": rich_data.get("second_appeal_date"),
+            "facts": rich_data.get("facts"),
+            "information_requested": rich_data.get("information_requested", []),
+            "grounds_for_appeal": rich_data.get("grounds_for_appeal"),
+            "rti_request_summary": self._summarize_request_regex(request) or rich_data.get("rti_request_summary"),
+            "sections_invoked": sections or rich_data.get("sections_invoked", []),
+            "rti_sections": rich_data.get("rti_sections", sections),
+            "exemption_sections": rich_data.get("exemption_sections", []),
+            "court_references": rich_data.get("court_references", []),
+            "circular_references": rich_data.get("circular_references", []),
+            "commission_observations": rich_data.get("commission_observations", []),
+            "final_order": rich_data.get("final_order"),
+            "outcome": self._infer_outcome(full_text, penalty_imposed) or rich_data.get("outcome"),
+            "reasoning_pattern": rich_data.get("reasoning_pattern"),
+            "pio_learning_signal": rich_data.get("pio_learning_signal"),
+            "entities": rich_data.get("entities", []),
+            "precedent_chunk": rich_data.get("precedent_chunk"),
             "penalty_imposed": penalty_imposed,
             "penalty_amount": penalty_amount,
-            "key_findings": self._findings_regex(findings),
+            "key_findings": self._findings_regex(findings) or rich_data.get("commission_observations", []),
             "public_interest_discussed": bool(
                 (segmented.PUBLIC_INTEREST or "").strip()
                 or re.search(r"(?i)\b(public interest|larger public interest|Section\s*8\s*\(\s*2\s*\))\b", full_text)

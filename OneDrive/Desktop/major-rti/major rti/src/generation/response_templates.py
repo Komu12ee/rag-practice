@@ -1,11 +1,11 @@
 """
-Citation-aware response templates for RTI analysis results.
+Citation-aware legal research response templates for RTI analysis results.
 
 This module extends the existing response generation flow by turning an
 RTIAnalysisResult into three outputs:
 1. Internal note for PIO review.
-2. Structured PIO recommendation.
-3. Appellant-facing draft RTI reply.
+2. Structured legal research summary for PIO review.
+3. Appellant-facing draft RTI reply for assistance only.
 
 Install requirements:
     pip install pydantic
@@ -48,19 +48,19 @@ Similar CIC/SIC cases:
 Exemption risks:
 {exemption_risks}
 
-Recommended action:
-{recommended_action}
+Legal research synthesis:
+{research_synthesis}
 
 Confidence level:
 {confidence_level}
 """
 
-PIO_RECOMMENDATION_TEMPLATE = """PIO RECOMMENDATION
+PIO_RECOMMENDATION_TEMPLATE = """PIO LEGAL RESEARCH SUMMARY
 
-Recommended response type: {response_type}
-Sections to invoke: {sections_to_invoke}
+Output type: {response_type}
+Relevant RTI Act sections for review: {sections_to_invoke}
 Deadline reminder: {deadline_reminder}
-Key legal basis: {key_legal_basis}
+Key legal research basis: {key_legal_basis}
 Risk assessment: {risk_assessment}
 """
 
@@ -72,16 +72,19 @@ Subject: Reply to RTI Application dated {rti_date}
 
 Dear Applicant,
 
-With reference to your RTI application regarding {rti_subject}, the following
-information is provided:
+With reference to your RTI application regarding {rti_subject}, the application
+has been examined for preparing an appropriate reply under the RTI Act, 2005.
 
 {response_body}
 
 {exemption_block}
 
-This decision is based on CIC precedent in {case_citations}.
+The following retrieved CIC/SIC references were considered while preparing this
+draft: {case_citations}.
 
-You may appeal this decision within 30 days to the First Appellate Authority.
+If aggrieved by the final reply issued by the Public Information Officer, the
+applicant may file a first appeal within 30 days before the First Appellate
+Authority under the RTI Act, 2005.
 
 {signature_block}
 """
@@ -90,14 +93,14 @@ DEFAULT_SIGNATURE_BLOCK = """Public Information Officer
 Chhattisgarh Infotech Promotion Society (CHiPS)
 Government of Chhattisgarh"""
 
-RESPONSE_TYPES = {"PROVIDE", "DENY", "PARTIAL", "SEEK_CLARIFICATION"}
+RESPONSE_TYPES = {"LEGAL_RESEARCH_ASSISTANCE", "NEEDS_MANUAL_REVIEW"}
 RISK_LEVELS = {"HIGH", "MEDIUM", "LOW"}
 
 
 class PIORecommendation(BaseModel):
-    """Structured recommendation for the PIO."""
+    """Structured legal research summary for the PIO."""
 
-    recommended_response_type: str = Field(pattern=r"^(PROVIDE|DENY|PARTIAL|SEEK_CLARIFICATION)$")
+    recommended_response_type: str = Field(pattern=r"^(LEGAL_RESEARCH_ASSISTANCE|NEEDS_MANUAL_REVIEW)$")
     sections_to_invoke: list[str] = Field(default_factory=list)
     deadline_reminder: str
     key_legal_basis: str
@@ -138,7 +141,7 @@ class ResponseGenerator:
             department=analysis.department or "Unknown",
             similar_cases=similar_cases,
             exemption_risks=exemption_risks,
-            recommended_action=analysis.recommendation or "Manual review required.",
+            research_synthesis=analysis.recommendation or "Manual legal review required.",
             confidence_level=f"{confidence_level} ({analysis.recommendation_confidence:.2f})",
         ).strip()
 
@@ -147,7 +150,7 @@ class ResponseGenerator:
         analysis: RTIAnalysisResult,
         rti_date: Optional[str] = None,
     ) -> PIORecommendation:
-        """Create structured PIO recommendation fields."""
+        """Create structured legal research fields."""
         response_type = self._recommended_response_type(analysis)
         sections = self._sections_to_invoke(analysis)
         deadline = self._deadline_reminder(rti_date)
@@ -170,7 +173,7 @@ class ResponseGenerator:
         rti_subject: Optional[str] = None,
         reply_date: Optional[str] = None,
     ) -> str:
-        """Create a formal appellant-facing RTI reply draft."""
+        """Create a formal appellant-facing RTI reply draft for PIO review."""
         recommendation = self.generate_pio_recommendation(analysis, rti_date)
         citations = self._case_citations(analysis)
         response_body = self._response_body(analysis, recommendation)
@@ -230,14 +233,9 @@ class ResponseGenerator:
 
     @staticmethod
     def _recommended_response_type(analysis: RTIAnalysisResult) -> str:
-        text = f"{analysis.recommendation} {analysis.draft_response_hint}".lower()
         if not analysis.similar_cases and analysis.recommendation_confidence < 0.35:
-            return "SEEK_CLARIFICATION"
-        if any(word in text for word in ("deny", "reject", "refuse", "withhold")):
-            return "DENY"
-        if analysis.exemption_risks:
-            return "PARTIAL"
-        return "PROVIDE"
+            return "NEEDS_MANUAL_REVIEW"
+        return "LEGAL_RESEARCH_ASSISTANCE"
 
     @staticmethod
     def _sections_to_invoke(analysis: RTIAnalysisResult) -> list[str]:
@@ -272,56 +270,49 @@ class ResponseGenerator:
                 for risk in analysis.exemption_risks
             )
             return f"{risk_text}. Cited cases: {citations}."
-        return f"No denial exemption was recommended. Cited cases: {citations}."
+        return f"No final disclosure decision is made by the system. Cited research references: {citations}."
 
     @staticmethod
     def _adverse_order_risk(analysis: RTIAnalysisResult, response_type: str) -> str:
-        if response_type == "SEEK_CLARIFICATION":
+        if response_type == "NEEDS_MANUAL_REVIEW":
             return "HIGH"
         if analysis.recommendation_confidence < 0.45:
             return "HIGH"
         if any(risk.risk_level == "HIGH" for risk in analysis.exemption_risks):
             return "HIGH"
-        if analysis.recommendation_confidence < 0.70 or response_type in {"DENY", "PARTIAL"}:
+        if any(risk.risk_level == "MEDIUM" for risk in analysis.exemption_risks):
+            return "MEDIUM"
+        if analysis.recommendation_confidence < 0.70:
             return "MEDIUM"
         return "LOW"
 
     @staticmethod
     def _response_body(analysis: RTIAnalysisResult, recommendation: PIORecommendation) -> str:
-        if recommendation.recommended_response_type == "PROVIDE":
+        if recommendation.recommended_response_type == "NEEDS_MANUAL_REVIEW":
             return (
-                "The request has been examined. Based on the available analysis and retrieved CIC/SIC "
-                "decisions, the information may be provided if it is held by this public authority and "
-                "no exempt material is found in the records."
-            )
-        if recommendation.recommended_response_type == "DENY":
-            return (
-                "The request has been examined. The requested information, to the extent covered by the "
-                "sections listed below, is not recommended for disclosure because the cited CIC/SIC "
-                "precedents support application of the relevant exemption."
-            )
-        if recommendation.recommended_response_type == "PARTIAL":
-            return (
-                "The request has been examined. Disclosable information may be provided after severing "
-                "or redacting exempt portions under Section 10 of the RTI Act, 2005. The legal basis for "
-                "withholding/redacting the exempt portions is stated below."
+                "The available legal research does not provide sufficient precedent support for an automated draft. "
+                "The concerned PIO should manually verify record custody, applicable statutory provisions, and the "
+                "precise information available on record before issuing the reply."
             )
         return (
-            "The request requires clarification or additional record verification before a final response "
-            "is issued. The applicant may be asked to clarify the exact records sought, if necessary."
+            "The request has been reviewed with assistance from retrieved legal references. The concerned PIO "
+            "should verify whether the requested records are held by this public authority, whether any part of "
+            "the request concerns another public authority, and whether any RTI Act provision requires disclosure, "
+            "severance, third-party consultation, or withholding. This draft does not make the final statutory "
+            "determination."
         )
 
     @staticmethod
     def _exemption_block(analysis: RTIAnalysisResult, recommendation: PIORecommendation) -> str:
-        if recommendation.recommended_response_type == "PROVIDE" or not analysis.exemption_risks:
-            return "No exemption is invoked in this draft reply."
+        if not analysis.exemption_risks:
+            return "No specific exemption ground was identified by the retrieved-precedent analysis. The PIO should independently verify the records before issuing the final reply."
 
         details = "\n".join(
             f"- Section {risk.section}: {risk.reasoning} [{risk.cic_precedent}]"
             for risk in analysis.exemption_risks
         )
         return (
-            "The following information is exempted under:\n"
+            "Possible RTI Act provisions requiring PIO review:\n"
             f"{details}"
         )
 
@@ -420,11 +411,11 @@ class TestResponseGenerator(unittest.TestCase):
         )
 
         self.assertIn("INTERNAL NOTE", outputs.internal_note)
-        self.assertEqual(outputs.pio_recommendation.recommended_response_type, "PARTIAL")
+        self.assertEqual(outputs.pio_recommendation.recommended_response_type, "LEGAL_RESEARCH_ASSISTANCE")
         self.assertIn("30 days", outputs.pio_recommendation.deadline_reminder)
         self.assertIn("MEDIUM", outputs.pio_recommendation.risk_assessment)
         self.assertIn("CIC/TEST/A/2024/000001", outputs.draft_rti_reply)
-        self.assertIn("You may appeal this decision within 30 days", outputs.draft_rti_reply)
+        self.assertIn("final reply issued by the Public Information Officer", outputs.draft_rti_reply)
         self.assertNotIn("INTERNAL NOTE", outputs.draft_rti_reply)
 
 

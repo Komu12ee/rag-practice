@@ -47,6 +47,7 @@ class RetrievedChunk(BaseModel):
     decision_date: Optional[str] = None
     outcome: Optional[str] = None
     department: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
     bm25_score: Optional[float] = None
     vector_score: Optional[float] = None
     rrf_score: float = Field(ge=0.0)
@@ -244,12 +245,13 @@ class HybridRetriever:
                 RetrievedChunk(
                     chunk_id=item.chunk_id,
                     case_number=item.case_number,
-                    source=str(metadata.get("source", "")),
+                    source=str(metadata.get("source") or metadata.get("source_type") or ""),
                     chunk_type=item.chunk_type,
                     text=item.text,
-                    decision_date=self._empty_to_none(metadata.get("decision_date")),
+                    decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
                     outcome=self._empty_to_none(metadata.get("outcome")),
-                    department=self._empty_to_none(metadata.get("department")),
+                    department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+                    metadata=metadata,
                     bm25_score=item.score,
                     vector_score=None,
                     rrf_score=max(0.0, float(item.score) / max_score),
@@ -273,12 +275,13 @@ class HybridRetriever:
                 RetrievedChunk(
                     chunk_id=item.chunk_id,
                     case_number=item.case_number,
-                    source=str(metadata.get("source", "")),
+                    source=str(metadata.get("source") or metadata.get("source_type") or ""),
                     chunk_type=item.chunk_type,
                     text=item.text,
-                    decision_date=self._empty_to_none(metadata.get("decision_date")),
+                    decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
                     outcome=self._empty_to_none(metadata.get("outcome")),
-                    department=self._empty_to_none(metadata.get("department")),
+                    department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+                    metadata=metadata,
                     bm25_score=None,
                     vector_score=item.score,
                     rrf_score=max(0.0, float(item.score) / max_score),
@@ -292,12 +295,13 @@ class HybridRetriever:
         return RetrievedChunk(
             chunk_id=str(item.get("chunk_id", "")),
             case_number=str(item.get("case_number") or metadata.get("case_number", "")),
-            source=str(metadata.get("source", "")),
+            source=str(metadata.get("source") or metadata.get("source_type") or ""),
             chunk_type=str(item.get("chunk_type") or metadata.get("chunk_type", "")),
             text=str(item.get("text", "")),
-            decision_date=self._empty_to_none(metadata.get("decision_date")),
+            decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
             outcome=self._empty_to_none(metadata.get("outcome")),
-            department=self._empty_to_none(metadata.get("department")),
+            department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+            metadata=metadata,
             bm25_score=item.get("bm25_score"),
             vector_score=item.get("vector_score"),
             rrf_score=float(item.get("rrf_score", 0.0)),

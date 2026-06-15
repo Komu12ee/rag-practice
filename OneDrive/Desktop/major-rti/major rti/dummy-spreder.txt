@@ -1,0 +1,198 @@
+
+(rti) PS C:\Users\hp\OneDrive\Desktop\major-rti\major rti> c:\Users\hp\anaconda3\python.exe src\pipelines\query_pipeline.py --text "Provide information about Aadhaar enrolment payments, VLE registration, GST payments, and records held by CHiPS or district administration." --type precedent_search --department-hint "CHiPS"
+2026-06-15 21:08:13,832 | INFO | mam_rti.query_pipeline| Starting query pipeline | type=precedent_search department_hint=CHiPS
+2026-06-15 21:08:23,721 | INFO | numexpr.utils | NumExpr defaulting to 14 threads.
+2026-06-15 21:08:27,161 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:27,207 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:27,495 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:27,541 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:27,548 | INFO | sentence_transformers.base.model | Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+2026-06-15 21:08:27,791 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:27,844 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:28,087 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:28,132 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/README.md "HTTP/1.1 200 OK"
+2026-06-15 21:08:28,395 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:28,441 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/modules.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:28,715 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:28,760 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/sentence_bert_config.json "HTTP/1.1200 OK"
+2026-06-15 21:08:29,025 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-06-15 21:08:29,026 | WARNING | huggingface_hub.utils._http | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-06-15 21:08:29,286 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:29,333 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+Loading weights: 100%|█| 103/103 [00:00<00:00, 12618.69
+2026-06-15 21:08:29,680 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:29,926 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:30,193 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:30,454 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:30,697 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:30,744 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200OK"
+2026-06-15 21:08:30,999 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:31,048 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:31,314 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:31,359 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/config.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:31,623 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:31,668 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/tokenizer_config.json "HTTP/1.1 200OK"
+2026-06-15 21:08:31,936 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:32,197 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-06-15 21:08:32,502 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-06-15 21:08:32,548 | INFO | httpx | HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-06-15 21:08:32,799 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-06-15 21:08:34,214 | INFO | httpx | HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 404 Not Found"
+2026-06-15 21:08:34,215 | WARNING | engine.rti_analysis_engine | Qwen reasoning failed; using retrieval-only fallback: model 'qwen2.5:14b' not found (status code: 404)
+2026-06-15 21:08:34,217 | INFO | mam_rti.query_pipeline| Query pipeline complete | elapsed=20.385s
+{
+  "analysis": {
+    "department": "CHiPS",
+    "detected_sections": [],
+    "exemption_risks": [
+      {
+        "section": "7",
+        "risk_level": "LOW",
+        "reasoning": "Section 7 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "24",
+        "risk_level": "LOW",
+        "reasoning": "Section 24 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "8(1)(d)",
+        "risk_level": "MEDIUM",
+        "reasoning": "Section 8(1)(d) appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "8(1)(e)",
+        "risk_level": "MEDIUM",
+        "reasoning": "Section 8(1)(e) appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "8(1)(j)",
+        "risk_level": "MEDIUM",
+        "reasoning": "Section 8(1)(j) appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "9",
+        "risk_level": "LOW",
+        "reasoning": "Section 9 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "10",
+        "risk_level": "LOW",
+        "reasoning": "Section 10 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/UIDAI/C/2025/104444"
+      },
+      {
+        "section": "20",
+        "risk_level": "LOW",
+        "reasoning": "Section 20 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/POSTS/A/2018/623242"
+      },
+      {
+        "section": "11",
+        "risk_level": "LOW",
+        "reasoning": "Section 11 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/POSTS/A/2017/121128"
+      },
+      {
+        "section": "19",
+        "risk_level": "LOW",
+        "reasoning": "Section 19 appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+        "cic_precedent": "CIC/MLABE/A/2018/131849"
+      }
+    ],
+    "similar_cases": [
+      {
+        "case_number": "CIC/UIDAI/C/2025/104444",
+        "decision_date": "",
+        "outcome": "PENALTY",
+        "similarity_score": 1.0,
+        "key_finding": "Institutional Framework under the Aadhaar Act: The Unique Identification Authority of India (UIDAI) functions as the statutory authority responsible for policy formulation, standards and management of the Central Identities Data Repository (CIDR)."
+      },
+      {
+        "case_number": "CIC/POSTS/A/2018/120095",
+        "decision_date": "2017-12-07",
+        "outcome": "",
+        "similarity_score": 0.4658782951465878,
+        "key_finding": "2."
+      },
+      {
+        "case_number": "CIC/MOYAS/A/2018/138155",
+        "decision_date": "",
+        "outcome": "",
+        "similarity_score": 0.43925667828106846,
+        "key_finding": "2."
+      },
+      {
+        "case_number": "CIC/CGPDT/C/2023/630233",
+        "decision_date": "",
+        "outcome": "REJECTED",
+        "similarity_score": 0.37045743951415416,
+        "key_finding": "The Commission, after hearing the submissions of the Respondent and after perusal of records, observes that the Respondent vide its letter dated 14.03.2023 had provided reply to the Appellant/Complainant but going through the same does not make the readerany wiser instead it has various and different reference numbers which only adds to confusion."
+      },
+      {
+        "case_number": "CIC/POSTS/A/2017/602956",
+        "decision_date": "2017-02-06",
+        "outcome": "REJECTED",
+        "similarity_score": 0.35753450557761385,
+        "key_finding": "2."
+      }
+    ],
+    "relevant_circulars": [],
+    "recommendation": "Qwen reasoning was unavailable. Use retrieved CIC/SIC cases for manual review.",
+    "recommendation_confidence": 0.95,
+    "draft_response_hint": "Review the cited similar cases and decide disclosure, partial disclosure, transfer,or rejection under the RTI Act.",
+    "sources_cited": [
+      "CIC/UIDAI/C/2025/104444",
+      "CIC/POSTS/A/2018/120095",
+      "CIC/MOYAS/A/2018/138155",
+      "CIC/CGPDT/C/2023/630233",
+      "CIC/POSTS/A/2017/602956",
+      "CIC/POSTS/A/2018/623242",
+      "CIC/POSTS/A/2017/121128",
+      "CIC/MLABE/A/2018/131849"
+    ],
+    "analysis_type": "pio_check",
+    "processing_time_seconds": 20.385
+  },
+  "responses": {
+    "internal_note": "INTERNAL NOTE - PIO USE ONLY\n\nDepartment identified:\nCHiPS\n\nSimilar CIC/SIC cases:\n- CIC/UIDAI/C/2025/104444 | Date: N/A | Outcome: PENALTY| Finding: Institutional Framework under the Aadhaar Act: The Unique Identification Authority of India (UIDAI) functions as the statutory authority responsible for policy formulation, standards and management of the CentralIdentities Data Repository (CIDR).\n- CIC/POSTS/A/2018/120095 | Date: 2017-12-07 | Outcome: N/A | Finding: 2.\n- CIC/MOYAS/A/2018/138155 | Date: N/A | Outcome: N/A | Finding: 2.\n- CIC/CGPDT/C/2023/630233 | Date: N/A | Outcome: REJECTED | Finding: The Commission, after hearing the submissions of the Respondent and after perusal of records, observes that the Respondent vide its letter dated 14.03.2023 had provided reply to the Appellant/Complainant but going through the same does not make the readerany wiser instead it has various and different reference numbers which only adds to confusion.\n- CIC/POSTS/A/2017/602956 | Date: 2017-02-06 | Outcome: REJECTED | Finding: 2.\n\nExemption risks:\n- Section 7: LOW risk. Section 7 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 24: LOW risk. Section 24 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n-Section 8(1)(d): MEDIUM risk. Section 8(1)(d) appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 8(1)(e): MEDIUM risk. Section 8(1)(e) appears in retrieved CIC/SIC reasoningfor a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 8(1)(j): MEDIUM risk. Section 8(1)(j) appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 9: LOW risk. Section 9appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 10: LOW risk. Section 10 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 20: LOW risk. Section 20 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/POSTS/A/2018/623242]\n- Section 11: LOW risk. Section 11 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/POSTS/A/2017/121128]\n- Section 19: LOW risk. Section 19appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/MLABE/A/2018/131849]\n\nRecommended action:\nQwen reasoning was unavailable. Use retrieved CIC/SICcases for manual review.\n\nConfidence level:\nHIGH (0.95)",
+    "pio_recommendation": {
+      "recommended_response_type": "DENY",
+      "sections_to_invoke": [
+        "Section 7",
+        "Section 24",
+        "Section 8(1)(d)",
+        "Section 8(1)(e)",
+        "Section 8(1)(j)",
+        "Section 9",
+        "Section 10",
+        "Section 20",
+        "Section 11",
+        "Section 19"
+      ],
+      "deadline_reminder": "Reply must be issued within30 days from the RTI application date under Section 7(1).",
+      "key_legal_basis": "Section 7 considered with precedent CIC/UIDAI/C/2025/104444; Section 24 considered with precedent CIC/UIDAI/C/2025/104444; Section 8(1)(d) considered with precedent CIC/UIDAI/C/2025/104444; Section8(1)(e) considered with precedent CIC/UIDAI/C/2025/104444; Section 8(1)(j) considered with precedent CIC/UIDAI/C/2025/104444; Section 9 considered with precedent CIC/UIDAI/C/2025/104444; Section 10 considered with precedentCIC/UIDAI/C/2025/104444; Section 20 considered with precedent CIC/POSTS/A/2018/623242; Section 11 considered with precedent CIC/POSTS/A/2017/121128; Section 19 considered with precedent CIC/MLABE/A/2018/131849. Cited cases:CIC/UIDAI/C/2025/104444, CIC/POSTS/A/2018/120095, CIC/MOYAS/A/2018/138155, CIC/CGPDT/C/2023/630233, CIC/POSTS/A/2017/602956, CIC/POSTS/A/2018/623242, CIC/POSTS/A/2017/121128, CIC/MLABE/A/2018/131849.",
+      "risk_assessment": "MEDIUM"
+    },
+    "draft_rti_reply": "[Letterhead]\nDate: 15/06/2026\nTo: The Applicant\n\nSubject: Reply to RTI Application dated the date mentioned in the application\n\nDear Applicant,\n\nWith reference to your RTI application regarding information request concerning CHiPS, the following\ninformation is provided:\n\nThe request has been examined. The requested information, to the extent covered by the sections listed below, is not recommended for disclosure because the cited CIC/SIC precedents support application of the relevant exemption.\n\nThe following information is exempted under:\n- Section 7: Section 7 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 24: Section 24 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 8(1)(d): Section 8(1)(d) appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 8(1)(e): Section 8(1)(e) appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 8(1)(j): Section 8(1)(j) appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 9: Section 9 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 10: Section 10 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/UIDAI/C/2025/104444]\n- Section 20: Section 20 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/POSTS/A/2018/623242]\n- Section 11: Section 11 appears in retrieved CIC/SIC reasoning for a similar RTI issue. [CIC/POSTS/A/2017/121128]\n- Section 19: Section 19 appears in retrieved CIC/SIC reasoning for a similar RTIissue. [CIC/MLABE/A/2018/131849]\n\nThis decision is based on CIC precedent in CIC/UIDAI/C/2025/104444, CIC/POSTS/A/2018/120095, CIC/MOYAS/A/2018/138155, CIC/CGPDT/C/2023/630233, CIC/POSTS/A/2017/602956, CIC/POSTS/A/2018/623242, CIC/POSTS/A/2017/121128, CIC/MLABE/A/2018/131849.\n\nYou may appeal this decision within 30 days to the First Appellate Authority.\n\nPublic Information Officer\nChhattisgarh Infotech Promotion Society (CHiPS)\nGovernment of Chhattisgarh"
+  },
+  "elapsed_seconds": 20.385
+}
+(rti) PS C:\Users\hp\OneDrive\Desktop\major-rti\major rti> 
+
+
+
+
+
+
+
+
+
+

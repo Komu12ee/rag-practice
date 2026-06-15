@@ -1,5 +1,5 @@
 """
-RTI analysis orchestration over hybrid retrieval + Qwen reasoning.
+RTI legal research orchestration over hybrid retrieval + Qwen reasoning.
 
 The engine coordinates:
 1. Department routing through the existing backend routing module.
@@ -56,7 +56,7 @@ ANALYSIS_TYPE_TO_QUERY_TYPE = {
 }
 
 SECTION_RE = re.compile(
-    r"(?i)\b(?:Section\s*)?("
+    r"(?i)\b(?:Section|Sec\.?|S\.|u/s)\s*("
     r"6\s*\(\s*3\s*\)|"
     r"7\s*(?:\(\s*1\s*\))?|"
     r"8\s*\(\s*1\s*\)\s*\(\s*[a-j]\s*\)|"
@@ -65,6 +65,24 @@ SECTION_RE = re.compile(
     r"9|10|11|19\s*(?:\(\s*1\s*\)|\(\s*3\s*\))?|20\s*(?:\(\s*1\s*\))?|24"
     r")(?=\W|$)"
 )
+
+EXEMPTION_OR_WITHHOLDING_SECTIONS = {
+    "8(1)",
+    "8(1)(a)",
+    "8(1)(b)",
+    "8(1)(c)",
+    "8(1)(d)",
+    "8(1)(e)",
+    "8(1)(f)",
+    "8(1)(g)",
+    "8(1)(h)",
+    "8(1)(i)",
+    "8(1)(j)",
+    "8(2)",
+    "9",
+    "11",
+    "24",
+}
 
 
 class ExemptionRisk(BaseModel):
@@ -265,8 +283,8 @@ class RTIAnalysisEngine:
     def _reason_with_qwen(self, full_prompt: str, allowed_sources: list[str]) -> dict[str, Any]:
         if not allowed_sources:
             return {
-                "recommendation": "No similar CIC/SIC decisions were retrieved. Manual legal review is recommended.",
-                "draft_response_hint": "Do not cite precedents because none were retrieved. Record that the recommendation is low-confidence.",
+                "recommendation": "No similar CIC/SIC decisions were retrieved. Manual legal research is required before preparing the RTI reply.",
+                "draft_response_hint": "Do not cite precedents because none were retrieved. Record that precedent support is unavailable.",
                 "exemption_risks": [],
             }
 
@@ -295,8 +313,8 @@ class RTIAnalysisEngine:
         except Exception as exc:
             logger.warning("Qwen reasoning failed; using retrieval-only fallback: %s", exc)
             return {
-                "recommendation": "Qwen reasoning was unavailable. Use retrieved CIC/SIC cases for manual review.",
-                "draft_response_hint": "Review the cited similar cases and decide disclosure, partial disclosure, transfer, or rejection under the RTI Act.",
+                "recommendation": "Qwen reasoning was unavailable. Use the retrieved CIC/SIC cases as legal research references for manual PIO review.",
+                "draft_response_hint": "Review the cited similar cases, verify record custody, identify applicable RTI Act provisions, and prepare the draft reply under PIO supervision.",
                 "exemption_risks": [],
             }
 
@@ -312,8 +330,8 @@ Facts and citations must come ONLY from these retrieved case numbers:
 
 JSON schema:
 {{
-  "recommendation": "main recommendation text",
-  "draft_response_hint": "actionable points for the PIO response",
+  "recommendation": "legal research synthesis only; do not recommend a final PIO decision",
+  "draft_response_hint": "drafting assistance points for the PIO response",
   "exemption_risks": [
     {{
       "section": "8(1)(j)",
@@ -333,7 +351,7 @@ JSON schema:
             if precedent not in allowed:
                 continue
             section = self._normalize_section(str(item.get("section", "")))
-            if not section:
+            if not section or not self._is_exemption_or_withholding_section(section):
                 continue
             risk_level = str(item.get("risk_level", "MEDIUM")).strip().upper()
             if risk_level not in {"HIGH", "MEDIUM", "LOW"}:
@@ -413,7 +431,7 @@ JSON schema:
             return risks
 
         allowed = set(allowed_sources)
-        sections = detected_sections or self._sections_from_chunks(chunks)
+        sections = [section for section in (detected_sections or self._sections_from_chunks(chunks)) if self._is_exemption_or_withholding_section(section)]
         precedent_by_section = self._precedent_by_section(chunks, allowed)
         for section in sections:
             precedent = precedent_by_section.get(section)
@@ -423,7 +441,7 @@ JSON schema:
                 ExemptionRisk(
                     section=section,
                     risk_level="MEDIUM" if section.startswith("8") else "LOW",
-                    reasoning=f"Section {section} appears in retrieved CIC/SIC reasoning for a similar RTI issue.",
+                    reasoning=f"Section {section} appears in retrieved CIC/SIC reasoning as a possible legal consideration for a similar RTI issue.",
                     cic_precedent=precedent.case_number,
                 )
             )
@@ -441,11 +459,11 @@ JSON schema:
 
         if not similar_cases:
             recommendation = (
-                "No similar CIC/SIC decisions were retrieved. Treat this as low-confidence and conduct manual legal review "
-                f"before issuing the RTI response for {department}."
+                "No similar CIC/SIC decisions were retrieved. Treat this as low-confidence legal research output "
+                f"and conduct manual legal review before preparing the RTI response for {department}."
             )
             draft_hint = (
-                "Acknowledge the request, verify record custody, identify any applicable RTI Act sections, and avoid citing "
+                "Acknowledge the request, verify record custody, identify any applicable RTI Act provisions, and avoid citing "
                 "precedents because none were retrieved."
             )
             return recommendation, draft_hint
@@ -453,13 +471,13 @@ JSON schema:
         if not recommendation:
             sections_text = ", ".join(detected_sections) if detected_sections else "no explicit exemption section"
             recommendation = (
-                f"Review the retrieved CIC/SIC precedents before responding. Detected sections: {sections_text}. "
+                f"Review the retrieved CIC/SIC precedents before drafting the response. Detected sections: {sections_text}. "
                 f"Most similar case: {similar_cases[0].case_number}."
             )
         if not draft_hint:
             draft_hint = (
-                "Cite the retrieved case numbers, explain whether the requested records are held by the department, "
-                "and consider disclosure with severance where exempt material can be redacted."
+                "Use the retrieved case numbers as supporting research, explain whether the requested records are held by the department, "
+                "and consider whether severance under Section 10 is relevant where exempt material can be separated."
             )
         return recommendation, draft_hint
 
@@ -577,7 +595,8 @@ JSON schema:
             if chunk.case_number not in allowed_sources:
                 continue
             for section in RTIAnalysisEngine._detect_sections(chunk.text):
-                mapping.setdefault(section, chunk)
+                if RTIAnalysisEngine._is_exemption_or_withholding_section(section):
+                    mapping.setdefault(section, chunk)
         return mapping
 
     @staticmethod
@@ -585,8 +604,16 @@ JSON schema:
         clean = RTIAnalysisEngine._clean_text(re.sub(r"^\[[A-Z_]+\]\s*", "", str(text or "")))
         if not clean:
             return ""
-        parts = re.split(r"(?<=[.!?])\s+", clean)
-        return parts[0][:350].strip()
+        parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+", clean) if part.strip()]
+        for part in parts:
+            if len(part) >= 40 and not re.fullmatch(r"\d+\.?", part):
+                return part[:350].strip()
+        return clean[:350].strip()
+
+    @staticmethod
+    def _is_exemption_or_withholding_section(section: str) -> bool:
+        normalized = RTIAnalysisEngine._normalize_section(section)
+        return normalized in EXEMPTION_OR_WITHHOLDING_SECTIONS
 
     @staticmethod
     def _clean_text(value: Any) -> str:
@@ -704,7 +731,7 @@ class FakeQwenClient:
             "message": {
                 "content": json.dumps(
                     {
-                        "recommendation": "Disclose file notings after redacting personal information, citing CIC/TEST/A/2024/000001.",
+                        "recommendation": "Retrieved precedent supports considering disclosure of file notings after redacting personal information, citing CIC/TEST/A/2024/000001.",
                         "draft_response_hint": "State that file notings are reviewable and apply Section 10 severance for personal information.",
                         "exemption_risks": [
                             {

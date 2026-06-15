@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Copy, FileDown, Loader2, Pencil, Printer, RefreshCcw, Save } from 'lucide-react'
+import { Copy, FileDown, Loader2, Pencil, Plus, Printer, RefreshCcw, Save, Sparkles } from 'lucide-react'
 import ErrorBanner from '../ErrorBanner'
-import { logFinalDecision } from '../../lib/api'
+import { generateDraftWithReferences, logFinalDecision, retrieveReferences } from '../../lib/api'
 import {
   AuditRecord,
   EvaluationResult,
   ExtractedInformation,
+  RetrievedReference,
   RoutingResult,
 } from '../../lib/types'
 
@@ -54,21 +55,14 @@ export default function ResultStep({
   const [downloadType, setDownloadType] = useState<'analysis' | 'response' | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [references, setReferences] = useState<RetrievedReference[]>([])
+  const [isSearchingReferences, setIsSearchingReferences] = useState(false)
+  const [isGeneratingReferencedDraft, setIsGeneratingReferencedDraft] = useState(false)
+  const [referenceWarning, setReferenceWarning] = useState('')
 
   const citations = evaluation.final_recom.citations.length
     ? evaluation.final_recom.citations.join(', ')
     : 'No exemption sections triggered'
-
-  const statutoryReferences = evaluation.layer_b_res.length
-    ? evaluation.layer_b_res
-    : evaluation.exemption_flags.map(flag => ({
-        section: flag.section,
-        title: flag.title,
-        legal_reasoning: flag.reasoning,
-        confidence_score: 1,
-        exact_quotes: [],
-        is_applicable: true,
-      }))
 
   useEffect(() => {
     setReplyText(neutralizeDecisionLanguage(draftText))
@@ -138,6 +132,49 @@ export default function ResultStep({
     }
   }
 
+  const handleAddReference = async () => {
+    setIsSearchingReferences(true)
+    setReferenceWarning('')
+    setError('')
+    try {
+      const result = await retrieveReferences({
+        raw_text: rawText,
+        extracted_info: extraction,
+        routing,
+        evaluation,
+      })
+      setReferences(result.references)
+      if (!result.references.length) {
+        setReferenceWarning('No highly relevant references were found in the indexed corpus. The draft remains based on RTI Act analysis only.')
+      }
+    } catch (err: any) {
+      setReferenceWarning(err.message || 'Reference retrieval failed.')
+    } finally {
+      setIsSearchingReferences(false)
+    }
+  }
+
+  const handleGenerateWithReferences = async () => {
+    setIsGeneratingReferencedDraft(true)
+    setReferenceWarning('')
+    setError('')
+    try {
+      const result = await generateDraftWithReferences({
+        raw_text: rawText,
+        extracted_info: extraction,
+        routing,
+        evaluation,
+        references,
+      })
+      setReplyText(neutralizeDecisionLanguage(result.draft))
+      if (result.warning) setReferenceWarning(result.warning)
+    } catch (err: any) {
+      setReferenceWarning(err.message || 'Failed to generate PIO response with references.')
+    } finally {
+      setIsGeneratingReferencedDraft(false)
+    }
+  }
+
   const caseFileName = caseId.replace(/\//g, '_')
 
   return (
@@ -203,32 +240,72 @@ export default function ResultStep({
         </div>
 
         <div className="card space-y-3">
-          <p className="text-section-hd">References</p>
-          <div className="space-y-3 text-[15px]">
-            <div>
-              <span className="text-[var(--t3)] block mb-1">RTI Act, 2005</span>
-              <div className="space-y-2">
-                {statutoryReferences.map((ref, index) => (
-                  <div key={`${ref.section}-${index}`} className="rounded border border-[var(--s3)] bg-[var(--s0)] p-2">
-                    <div className="font-bold text-[var(--t1)]">Section {ref.section} — {ref.title}</div>
-                    <div className="text-[var(--t2)] mt-1">{ref.legal_reasoning}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-[var(--t3)] block">Similar CIC/SIC Decisions</span>
-              <span className="font-semibold text-[var(--t1)]">Phase 2 research source. Not queried in this run.</span>
-            </div>
-            <div>
-              <span className="text-[var(--t3)] block">Relevant Court Judgments</span>
-              <span className="font-semibold text-[var(--t1)]">Phase 2 research source. Not queried in this run.</span>
-            </div>
-            <div>
-              <span className="text-[var(--t3)] block">Comparable Historical Cases</span>
-              <span className="font-semibold text-[var(--t1)]">Available when CIC/SIC/court corpus search is enabled.</span>
-            </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-section-hd">Reference Research</p>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={handleAddReference}
+              disabled={isSearchingReferences}
+            >
+              {isSearchingReferences ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Add Reference
+            </button>
           </div>
+
+          {isSearchingReferences && (
+            <div className="rounded border border-[var(--s3)] bg-[var(--s0)] px-3 py-2 text-[15px] font-semibold text-[var(--t2)] flex items-start gap-2">
+              <Loader2 className="h-4 w-4 animate-spin mt-0.5 shrink-0" />
+              Searching RTI Act, CIC/SIC and court references...
+            </div>
+          )}
+
+          {!isSearchingReferences && references.length === 0 && !referenceWarning && (
+            <p className="text-[15px] leading-relaxed text-[var(--t3)]">
+              References are not shown automatically. Use Add Reference to search RTI Act provisions, CIC/SIC material, court references, circulars, and historical cases on demand.
+            </p>
+          )}
+
+          {referenceWarning && (
+            <div className="rounded border border-[var(--amber-border)] bg-[var(--amber-bg)] px-3 py-2 text-[15px] text-[var(--amber)] font-semibold">
+              {referenceWarning}
+            </div>
+          )}
+
+          {references.length > 0 && (
+            <div className="space-y-2">
+              {references.map((ref, index) => (
+                <div key={`${ref.title}-${index}`} className="rounded border border-[var(--s3)] bg-white p-3 text-[14px]">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="badge badge-grey">{ref.source_type}</span>
+                    <span className="font-bold text-[var(--t3)]">{Math.round(ref.confidence_score * 100)}%</span>
+                  </div>
+                  <div className="mt-2 font-bold text-[var(--t1)] leading-snug">{ref.title}</div>
+                  {(ref.public_authority || ref.outcome) && (
+                    <div className="mt-1 flex flex-wrap gap-2 text-[13px] font-semibold text-[var(--t3)]">
+                      {ref.public_authority && <span>{ref.public_authority}</span>}
+                      {ref.outcome && <span>{ref.outcome.replace(/_/g, ' ')}</span>}
+                    </div>
+                  )}
+                  {ref.relevant_section && (
+                    <div className="mt-1 text-[var(--t3)] font-semibold">Section: {ref.relevant_section}</div>
+                  )}
+                  <p className="mt-2 text-[var(--t2)] leading-relaxed line-clamp-4">{ref.extracted_passage}</p>
+                  <p className="mt-2 text-[var(--t1)] font-semibold leading-relaxed">{ref.why_relevant}</p>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                className="btn btn-primary w-full justify-center"
+                disabled={isGeneratingReferencedDraft}
+                onClick={handleGenerateWithReferences}
+              >
+                {isGeneratingReferencedDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Generate PIO Response with References
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="card space-y-3">

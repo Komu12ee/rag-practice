@@ -43,14 +43,26 @@ COMMISSION_FINDINGS_OVERLAP_TOKENS = 50
 DEFAULT_CHUNKS_ROOT = PROJECT_ROOT / "data" / "chunks"
 
 CHUNK_TYPES = (
+    "CASE_HEADER",
+    "DATES_TABLE",
+    "PARTIES",
+    "FACTS",
+    "INFORMATION_REQUESTED",
     "RTI_REQUEST",
     "CPIO_REPLY",
     "FAA_ORDER",
+    "GROUNDS_FOR_APPEAL",
     "COMMISSION_FINDINGS",
+    "COMMISSION_OBSERVATIONS",
+    "COMMISSION_OBSERVATION",
     "SECTION_ANALYSIS",
     "PUBLIC_INTEREST",
     "DIRECTIONS",
+    "FINAL_ORDER",
     "PENALTY_REASONING",
+    "PRECEDENT_SUMMARY",
+    "PIO_LEARNING_SIGNAL",
+    "ENTITY_CONTEXT",
     "FULL_SUMMARY",
 )
 
@@ -58,6 +70,7 @@ SECTION_TO_CHUNK_TYPE = {
     "RTI_REQUEST": "RTI_REQUEST",
     "CPIO_REPLY": "CPIO_REPLY",
     "FAA_ORDER": "FAA_ORDER",
+    "GROUNDS_OF_APPEAL": "GROUNDS_FOR_APPEAL",
     "COMMISSION_FINDINGS": "COMMISSION_FINDINGS",
     "SECTION_ANALYSIS": "SECTION_ANALYSIS",
     "PUBLIC_INTEREST": "PUBLIC_INTEREST",
@@ -147,14 +160,25 @@ class LegalChunker:
                         chunk_type=chunk_type,
                         text=prefixed,
                         metadata={
+                            **self._metadata_for(case_metadata, section_name, chunk_type),
                             "section_name": section_name,
                             "part_index": index,
                             "part_count": len(parts),
-                            "sections_invoked": case_metadata.sections_invoked,
-                            "source_file": case_metadata.source_file,
                         },
                     )
                 )
+
+        for chunk_type, text in self._synthetic_chunks(case_metadata):
+            if len(text) < self.min_chars:
+                continue
+            chunks.append(
+                self._make_chunk(
+                    case_metadata=case_metadata,
+                    chunk_type=chunk_type,
+                    text=self._prefix_text(chunk_type, text),
+                    metadata=self._metadata_for(case_metadata, chunk_type, chunk_type),
+                )
+            )
 
         summary_text = self._build_full_summary(case_metadata)
         if summary_text:
@@ -164,6 +188,7 @@ class LegalChunker:
                     chunk_type="FULL_SUMMARY",
                     text=self._prefix_text("FULL_SUMMARY", summary_text),
                     metadata={
+                        **self._metadata_for(case_metadata, "FULL_SUMMARY", "FULL_SUMMARY"),
                         "sections_invoked": case_metadata.sections_invoked,
                         "source_file": case_metadata.source_file,
                         "summary_source": "ExtractedCase.outcome + key_findings",
@@ -264,7 +289,130 @@ class LegalChunker:
             metadata=metadata,
         )
 
+    def _metadata_for(self, case_metadata: ExtractedCase, section_name: str, chunk_type: str) -> dict[str, Any]:
+        return {
+            "case_number": case_metadata.case_number,
+            "source_type": case_metadata.source,
+            "section_name": section_name,
+            "chunk_type": chunk_type,
+            "outcome": case_metadata.outcome,
+            "public_authority": case_metadata.public_authority,
+            "date": case_metadata.decision_date or case_metadata.hearing_date or case_metadata.rti_application_date,
+            "rti_sections": case_metadata.rti_sections or case_metadata.sections_invoked,
+            "exemption_sections": case_metadata.exemption_sections,
+            "sections_invoked": case_metadata.sections_invoked,
+            "reasoning_pattern": case_metadata.reasoning_pattern,
+            "entities_person": case_metadata.entities_person,
+            "entities_authority": case_metadata.entities_authority,
+            "entities_department": case_metadata.entities_department,
+            "entities_location": case_metadata.entities_location,
+            "keywords": self._keywords(case_metadata, chunk_type),
+            "source_file": case_metadata.source_file,
+        }
+
+    def _synthetic_chunks(self, case_metadata: ExtractedCase) -> list[tuple[str, str]]:
+        chunks: list[tuple[str, str]] = []
+        header = self._case_header_text(case_metadata)
+        if header:
+            chunks.append(("CASE_HEADER", header))
+        dates = self._dates_table_text(case_metadata)
+        if dates:
+            chunks.append(("DATES_TABLE", dates))
+        parties = self._parties_text(case_metadata)
+        if parties:
+            chunks.append(("PARTIES", parties))
+        if case_metadata.facts:
+            chunks.append(("FACTS", case_metadata.facts))
+        if case_metadata.information_requested:
+            chunks.append(("INFORMATION_REQUESTED", "; ".join(case_metadata.information_requested)))
+        if case_metadata.grounds_for_appeal:
+            chunks.append(("GROUNDS_FOR_APPEAL", case_metadata.grounds_for_appeal))
+        if case_metadata.commission_observations:
+            chunks.append(("COMMISSION_OBSERVATION", "; ".join(case_metadata.commission_observations)))
+        if case_metadata.final_order:
+            chunks.append(("FINAL_ORDER", case_metadata.final_order))
+        if case_metadata.precedent_chunk:
+            chunks.append(("PRECEDENT_SUMMARY", case_metadata.precedent_chunk))
+        if case_metadata.pio_learning_signal:
+            chunks.append(("PIO_LEARNING_SIGNAL", case_metadata.pio_learning_signal))
+        entity_context = self._entity_context_text(case_metadata)
+        if entity_context:
+            chunks.append(("ENTITY_CONTEXT", entity_context))
+        return chunks
+
+    @staticmethod
+    def _case_header_text(case_metadata: ExtractedCase) -> str:
+        parts = [
+            f"Case number: {case_metadata.case_number}",
+            f"Commission: {case_metadata.commission}" if case_metadata.commission else "",
+            f"Source: {case_metadata.source}",
+            f"Commissioner: {case_metadata.commissioner_name}" if case_metadata.commissioner_name else "",
+            f"Outcome: {case_metadata.outcome}" if case_metadata.outcome else "",
+        ]
+        return ". ".join(part for part in parts if part)
+
+    @staticmethod
+    def _dates_table_text(case_metadata: ExtractedCase) -> str:
+        fields = [
+            ("RTI application date", case_metadata.rti_application_date),
+            ("CPIO reply date", case_metadata.cpio_reply_date),
+            ("First appeal date", case_metadata.first_appeal_date),
+            ("FAA order date", case_metadata.faa_order_date),
+            ("Second appeal date", case_metadata.second_appeal_date),
+            ("Hearing date", case_metadata.hearing_date),
+            ("Decision date", case_metadata.decision_date),
+        ]
+        return ". ".join(f"{label}: {value}" for label, value in fields if value)
+
+    @staticmethod
+    def _parties_text(case_metadata: ExtractedCase) -> str:
+        fields = [
+            ("Appellant", case_metadata.appellant_name),
+            ("Respondent", case_metadata.respondent_name),
+            ("Public authority", case_metadata.public_authority),
+            ("CPIO/PIO", case_metadata.cpio_name),
+            ("FAA", case_metadata.faa_name),
+        ]
+        return ". ".join(f"{label}: {value}" for label, value in fields if value)
+
+    @staticmethod
+    def _entity_context_text(case_metadata: ExtractedCase) -> str:
+        fields = [
+            ("People", case_metadata.entities_person),
+            ("Authorities", case_metadata.entities_authority),
+            ("Departments", case_metadata.entities_department),
+            ("Locations", case_metadata.entities_location),
+            ("Other entities", case_metadata.entities),
+        ]
+        parts = [f"{label}: {', '.join(values)}" for label, values in fields if values]
+        return ". ".join(parts)
+
+    @staticmethod
+    def _keywords(case_metadata: ExtractedCase, chunk_type: str) -> list[str]:
+        values: list[str] = [chunk_type]
+        values.extend(case_metadata.rti_sections or case_metadata.sections_invoked)
+        values.extend(case_metadata.exemption_sections)
+        values.extend(case_metadata.entities[:8])
+        values.extend(case_metadata.reasoning_pattern)
+        values.extend(case_metadata.entities_person[:5])
+        values.extend(case_metadata.entities_authority[:5])
+        values.extend(case_metadata.entities_department[:5])
+        values.extend(case_metadata.entities_location[:5])
+        for value in (case_metadata.public_authority, case_metadata.outcome):
+            if value:
+                values.append(value)
+        result: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            text = re.sub(r"\s+", " ", str(value)).strip()
+            if text and text.lower() not in seen:
+                result.append(text)
+                seen.add(text.lower())
+        return result[:30]
+
     def _build_full_summary(self, case_metadata: ExtractedCase) -> str:
+        if case_metadata.precedent_chunk:
+            return case_metadata.precedent_chunk
         if not case_metadata.outcome or not case_metadata.key_findings:
             return ""
 

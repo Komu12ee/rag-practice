@@ -41,6 +41,19 @@ export interface StatutoryReference {
   exact_quotes: string[];
 }
 
+export interface RetrievedReference {
+  source_type: string;
+  title: string;
+  case_number?: string;
+  public_authority?: string;
+  outcome?: string;
+  relevant_section: string;
+  extracted_passage: string;
+  why_relevant: string;
+  confidence_score: number;
+  metadata?: Record<string, unknown>;
+}
+
 export interface BalancerOutput {
   pro_disclosure_argument: string;
   pro_exemption_argument: string;

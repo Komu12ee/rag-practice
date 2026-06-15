@@ -25,16 +25,24 @@ from pydantic import BaseModel, Field, field_validator
 
 SECTION_KEYS = (
     "HEADER",
+    "CASE_HEADER",
+    "DATES_TABLE",
     "PARTIES",
     "BACKGROUND",
+    "FACTS",
     "RTI_REQUEST",
+    "INFORMATION_REQUESTED",
     "CPIO_REPLY",
     "FAA_ORDER",
     "GROUNDS_OF_APPEAL",
+    "GROUNDS_FOR_APPEAL",
+    "HEARING_SUBMISSIONS",
     "COMMISSION_FINDINGS",
+    "COMMISSION_OBSERVATIONS",
     "SECTION_ANALYSIS",
     "PUBLIC_INTEREST",
     "DIRECTIONS",
+    "FINAL_ORDER",
     "PENALTY",
 )
 
@@ -48,16 +56,24 @@ class SegmentedDecision(BaseModel):
     """
 
     HEADER: str = ""
+    CASE_HEADER: str = ""
+    DATES_TABLE: str = ""
     PARTIES: str = ""
     BACKGROUND: str = ""
+    FACTS: str = ""
     RTI_REQUEST: str = ""
+    INFORMATION_REQUESTED: str = ""
     CPIO_REPLY: str = ""
     FAA_ORDER: str = ""
     GROUNDS_OF_APPEAL: str = ""
+    GROUNDS_FOR_APPEAL: str = ""
+    HEARING_SUBMISSIONS: str = ""
     COMMISSION_FINDINGS: str = ""
+    COMMISSION_OBSERVATIONS: str = ""
     SECTION_ANALYSIS: str = ""
     PUBLIC_INTEREST: str = ""
     DIRECTIONS: str = ""
+    FINAL_ORDER: str = ""
     PENALTY: str = ""
     confidence: dict[str, float] = Field(
         default_factory=lambda: {key: 0.0 for key in SECTION_KEYS}
@@ -114,6 +130,12 @@ class LegalSegmenter:
             (r"\b(?:Background|Brief Facts|Facts|Facts of the Case|Relevant Facts|Case History)\s*[:\-]?", 0.88),
             (r"\bThe facts of the case.*?(?:are|is)\s+(?:as\s+)?(?:under|follows)\s*[:\-]?", 0.78),
         ],
+        "FACTS": [
+            (r"(?m)^\s*(?:Facts|Facts of the Case|Brief Facts|Relevant Facts)\s*[:\-]?\s*$", 0.90),
+        ],
+        "INFORMATION_REQUESTED": [
+            (r"(?m)^\s*(?:Information Sought|Information Requested|Details Sought|Queries Raised)\s*[:\-]?\s*$", 0.92),
+        ],
         "RTI_REQUEST": [
             (r"\b(?:RTI Application|RTI Request|Information Sought|Information Requested|Query Raised|Queries Raised|The appellant sought|The complainant sought)\s*[:\-]?", 0.92),
             (r"\b(?:The Appellant|The applicant|The Complainant)\s+(?:filed|submitted).{0,120}?\bRTI\b.{0,120}?\b(?:seeking|sought)\b\s*[:\-]?", 0.78),
@@ -130,9 +152,20 @@ class LegalSegmenter:
             (r"\b(?:Grounds of Appeal|Second Appeal|Grounds for Second Appeal|Appellant'?s Submission|Appellant'?s Arguments|Submissions of the Appellant|Complainant'?s Submission)\s*[:\-]?", 0.90),
             (r"\b(?:Being dissatisfied|Being aggrieved|Aggrieved by).{0,180}?\b(?:second appeal|complaint)\b", 0.74),
         ],
+        "GROUNDS_FOR_APPEAL": [
+            (r"(?m)^\s*(?:Grounds for Second Appeal|Grounds for Appeal|Grounds of Appeal)\s*[:\-]?\s*$", 0.92),
+        ],
+        "HEARING_SUBMISSIONS": [
+            (r"(?m)^\s*(?:Hearing|Hearing Submissions|Submissions|Proceedings During Hearing)\s*[:\-]?\s*$", 0.88),
+            (r"\bDuring\s+the\s+hearing\b", 0.82),
+        ],
         "COMMISSION_FINDINGS": [
             (r"(?m)^\s*(?:Decision|Order|Commission'?s Decision|Commission'?s Findings|Observations|Discussion|Analysis and Decision|Findings)\s*[:\-]?\s*$", 0.88),
             (r"\b(?:The Commission observes|The Commission noted|The Commission is of the view|The Commission finds|Upon hearing|After hearing)\b", 0.84),
+        ],
+        "COMMISSION_OBSERVATIONS": [
+            (r"(?m)^\s*(?:Commission'?s Observations|Observations|Commission'?s Findings|Findings)\s*[:\-]?\s*$", 0.90),
+            (r"\b(?:The Commission observes|The Commission noted|The Commission finds)\b", 0.84),
         ],
         "SECTION_ANALYSIS": [
             (r"\b(?:Section Analysis|Legal Analysis|Exemption Analysis|Applicability of Section|Analysis of Section)\s*[:\-]?", 0.92),
@@ -146,6 +179,10 @@ class LegalSegmenter:
             (r"\b(?:Directions?|Final Directions?|Relief|Decision and Directions?|Order and Directions?)\s*[:\-]?", 0.90),
             (r"\b(?:The Commission directs|The respondent is directed|CPIO is directed|PIO is directed|Accordingly,.*?directed)\b", 0.86),
             (r"\b(?:The appeal is disposed of|The complaint is disposed of|Disposed of accordingly)\b", 0.74),
+        ],
+        "FINAL_ORDER": [
+            (r"(?m)^\s*(?:Final Order|Order|Decision|Final Disposal)\s*[:\-]?\s*$", 0.90),
+            (r"\b(?:appeal|complaint)\s+is\s+disposed\s+of\b", 0.78),
         ],
         "PENALTY": [
             (r"\b(?:Penalty|Show Cause|Show-Cause|Section 20|Compensation|Disciplinary Action)\s*[:\-]?", 0.92),
@@ -194,7 +231,14 @@ class LegalSegmenter:
         header = self._extract_header(normalized, boundaries)
         if header:
             sections["HEADER"] = header
+            sections["CASE_HEADER"] = header
             confidence["HEADER"] = self._header_confidence(header)
+            confidence["CASE_HEADER"] = confidence["HEADER"]
+
+        dates_table = self._extract_dates_table(normalized)
+        if dates_table:
+            sections["DATES_TABLE"] = dates_table
+            confidence["DATES_TABLE"] = 0.86
 
         parties = self._extract_parties(normalized)
         if parties:
@@ -203,6 +247,7 @@ class LegalSegmenter:
 
         if boundaries:
             self._slice_boundary_sections(normalized, boundaries, sections, confidence)
+            self._sync_alias_sections(sections, confidence)
 
         self._augment_section_analysis(normalized, sections, confidence)
         self._augment_public_interest(normalized, sections, confidence)
@@ -219,6 +264,33 @@ class LegalSegmenter:
             confidence["COMMISSION_FINDINGS"] = 0.35
 
         return SegmentedDecision(**sections, confidence=confidence)
+
+    @staticmethod
+    def _sync_alias_sections(sections: dict[str, str], confidence: dict[str, float]) -> None:
+        aliases = [
+            ("BACKGROUND", "FACTS"),
+            ("RTI_REQUEST", "INFORMATION_REQUESTED"),
+            ("GROUNDS_OF_APPEAL", "GROUNDS_FOR_APPEAL"),
+            ("COMMISSION_FINDINGS", "COMMISSION_OBSERVATIONS"),
+            ("DIRECTIONS", "FINAL_ORDER"),
+        ]
+        for old_key, new_key in aliases:
+            if not sections.get(new_key) and sections.get(old_key):
+                sections[new_key] = sections[old_key]
+                confidence[new_key] = confidence.get(old_key, 0.0)
+            if not sections.get(old_key) and sections.get(new_key):
+                sections[old_key] = sections[new_key]
+                confidence[old_key] = confidence.get(new_key, 0.0)
+
+    @staticmethod
+    def _extract_dates_table(text: str) -> str:
+        rows = []
+        pattern = re.compile(
+            r"(?im)^\s*(RTI application|CPIO reply|First Appeal|FAA Order|Second Appeal|Complaint|Date of hearing)\s*:?\s*(.+?)\s*$"
+        )
+        for match in pattern.finditer(text):
+            rows.append(f"{match.group(1)}: {' '.join(match.group(2).split())}")
+        return "\n".join(rows[:12])
 
     def _normalize_text(self, text: str) -> str:
         text = "" if text is None else str(text)

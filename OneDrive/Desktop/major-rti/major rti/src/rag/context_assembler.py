@@ -47,21 +47,24 @@ Type: {chunk_type}
 
 {text}"""
 
-PIO_ASSISTANCE_SYSTEM_PROMPT = """You are a legal assistant for Public Information Officers under the RTI Act 2005.
-Answer based ONLY on the provided CIC/SIC decisions.
-Cite every legal point with the case number in brackets.
-Never invent case numbers or facts not present in the context.
-End with: "This is based on CIC/SIC decisions and is informational only."
+PIO_ASSISTANCE_SYSTEM_PROMPT = """You are a legal research and drafting assistant for Public Information Officers under the RTI Act, 2005.
+Answer based ONLY on the provided RTI Act/CIC/SIC/court/circular context.
+Cite every legal point with the case number or source title in brackets.
+Never invent case numbers, facts, or statutory language not present in the context.
+Do not recommend or select the final PIO decision. Present legal considerations for the PIO's independent determination.
+End with: "This system provides legal research and drafting assistance only. The final decision under the RTI Act, 2005 remains the responsibility of the concerned PIO."
 """
 
 EXEMPTION_CHECK_SYSTEM_PROMPT = """You are analyzing whether an RTI exemption under Section 8 applies.
-Review the provided decisions to identify how the CIC has ruled on similar exemptions.
-Structure your response: (1) Applicable section, (2) CIC precedent, (3) Recommendation.
+Review the provided legal context to identify comparable exemption/disclosure reasoning.
+Structure your response: (1) Applicable section, (2) Supporting legal references, (3) Arguments for disclosure, (4) Arguments for exemption, (5) PIO verification points.
+Do not present a final decision.
 """
 
 APPEAL_ANALYSIS_SYSTEM_PROMPT = """You are analyzing an RTI appeal scenario.
-Review similar CIC decisions to predict likely outcome and suggest strategy.
-Structure: (1) Similar cases, (2) Likely outcome, (3) Recommended approach.
+Review similar CIC/SIC/court references to identify precedent patterns and learning points for the PIO.
+Structure: (1) Similar references, (2) Reasoning patterns, (3) PIO learning points, (4) Records or facts to verify.
+Do not predict a final outcome or recommend a final statutory decision.
 """
 
 SYSTEM_PROMPTS = {
@@ -329,6 +332,7 @@ class ContextAssembler:
             decision_date=chunk.decision_date,
             outcome=chunk.outcome,
             department=chunk.department,
+            metadata=chunk.metadata,
             bm25_score=chunk.bm25_score,
             vector_score=chunk.vector_score,
             rrf_score=chunk.rrf_score,
@@ -446,7 +450,7 @@ class TestContextAssembler(unittest.TestCase):
 
         self.assertNotEqual(pio.system_prompt, exemption.system_prompt)
         self.assertNotEqual(exemption.system_prompt, appeal.system_prompt)
-        self.assertIn("informational only", pio.system_prompt)
+        self.assertIn("legal research and drafting assistance only", pio.system_prompt)
         self.assertIn("Section 8", exemption.system_prompt)
         self.assertIn("appeal scenario", appeal.system_prompt)
 

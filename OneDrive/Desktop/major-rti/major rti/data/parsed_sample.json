@@ -1,0 +1,109 @@
+{
+  "case_number": "CIC/AAOIN/A/2017/102333",
+  "commission": "Central Information Commission",
+  "appeal_number": "CIC/AAOIN/A/2017/102333",
+  "decision_date": null,
+  "hearing_date": "2018-04-05",
+  "commissioner_name": "Amitava Bhattacharyya",
+  "appellant_name": "Sudesh Raghunath Gaikwad",
+  "respondent_name": "General Manager(Engineer) and CPIO, Airport Authority of India O/o the Regional Executive Director ,Western Region HQ, Opposite Pariswada,Sahar Road,Vile Parle, Mumbai, Maharashtra-400099.",
+  "public_authority": "Airport Authority of India",
+  "department": null,
+  "ministry": null,
+  "cpio_name": "Shri K.P. Ghosh, General Manager cum PIO",
+  "faa_name": null,
+  "rti_application_date": "2016-03-10",
+  "cpio_reply_date": "2016-04-20",
+  "first_appeal_date": "2016-04-18",
+  "faa_order_date": null,
+  "second_appeal_date": "2016-07-11",
+  "facts": "The appellant vide RTI application dated 10.03.2016 sought information on the follow up of the Hon’ble High Court Mumbai’s order regarding prohibiting any construction within a radius of 20 kms. from the periphery of the Mumbai Airport boundary. The appellant also sought details of a Committee which had been constituted by the Airport Authority of India (Mumbai Regional Office) for examining in details the order of the Hon’ble High Court, Mumbai. The RTI application sought information on the address of the high power Committee which had rightly been constituted by the Airports Authority of India, Mumbai whether the said Committee had started proceedings and whether the final report in this regard has been prepared or not. 2 If the final report of the said Committee has been prepared, a copy of the said report was sought in the RTI application. Names of the members of the high power Committee and their mobile numbers etc were also sought in this RTI application.",
+  "information_requested": [
+    "follow up of the Hon’ble High Court Mumbai’s order",
+    "details of a Committee which had been constituted by the Airport Authority of India (Mumbai Regional Office) for examining in details the order of the Hon’ble High Court, Mumbai",
+    "address of the high power Committee which had rightly been constituted by the Airports Authority of India, Mumbai whether the said Committee had started pr",
+    "whether the said Committee had started proceedings",
+    "whether the final report in this regard has been prepared",
+    "copy of the said report",
+    "Names of the members of the high power Committee and their mobile numbers etc were also sought in this RTI application"
+  ],
+  "grounds_for_appeal": "The CPIO did not provide the desired information.",
+  "rti_request_summary": "follow up of the Hon’ble High Court Mumbai’s order details of a Committee which had been constituted by the Airport Authority of India (Mumbai Regional Office) for examining in details the order of the Hon’ble High Court, Mumbai address of the high power Committee which had rightly been constituted by the Airports Authority of India, Mumbai whether the said Committee had started pr whether the said Committee had started proceedings whether the final report in this regard has been prepared copy of the said report Names of the members of the high power Committee and their mobile numbers etc were also sought in this RTI application",
+  "sections_invoked": [],
+  "rti_sections": [],
+  "exemption_sections": [],
+  "court_references": [
+    "High Court"
+  ],
+  "circular_references": [],
+  "commission_observations": [
+    "Appellant : Absent Respondent : Shri K.P",
+    "Ghosh, General Manager cum PIO, Airport Authority of India During the hearing, the respondent PIO submitted that they had provided the requisite reply vide their letter dated 20.04.2016",
+    "He further submitted that another reply was also provided on 08.05.16",
+    "The reply furnished to the appellant is just and proper and hence the case might be dismissed",
+    "Since the same was not available in the case record, the respondent PIO was asked to read this reply over the VC facility",
+    "He was intimated to send a copy of the same to the Commission through e-mail for record"
+  ],
+  "final_order": "With the above observation, the appeal is disposed of",
+  "outcome": "APPEAL_DISPOSED",
+  "reasoning_pattern": [
+    "CPIO reply accepted as just and proper",
+    "No Commission interference required",
+    "Pointwise reply considered adequate",
+    "Appellant absent or did not contest at hearing",
+    "Appeal Disposed"
+  ],
+  "pio_learning_signal": "Pointwise and reasoned CPIO replies are more likely to be upheld.",
+  "entities": [
+    "Airport Authority of India",
+    "Baba Gangnath Marg",
+    "New Delhi",
+    "File No",
+    "Sudesh Raghunath Gaikwad",
+    "Appellant Vs",
+    "General Manager",
+    "Airport Authority",
+    "Regional Executive Director",
+    "Western Region",
+    "Opposite Pariswada",
+    "Sahar Road",
+    "Vile Parle",
+    "Respondent Dates",
+    "First Appeal",
+    "Record Second Appeal",
+    "High Court Mumbai",
+    "Mumbai Airport",
+    "Mumbai Regional Office",
+    "High Court"
+  ],
+  "entities_person": [
+    "Sudesh Raghunath Gaikwad",
+    "Shri K.P. Ghosh"
+  ],
+  "entities_authority": [
+    "Airport Authority of India",
+    "General Manager(Engineer) and CPIO, Airport Authority",
+    "Committee which had been constituted by the Airport Authority",
+    "Airport Authority"
+  ],
+  "entities_department": [],
+  "entities_location": [
+    "New Delhi",
+    "Mumbai",
+    "Maharashtra"
+  ],
+  "precedent_chunk": "Applicant sought follow up of the Hon’ble High Court Mumbai’s order; details of a Committee which had been constituted by the Airport Authority of India (Mumbai Regional Office) for examining in details the order of the Hon’ble High Court, Mumbai; address of the high power Committee which had rightly been constituted by the Airports Authority of India, Mumbai whether the said Committee had started pr; whether the said Committee had started proceedings. Commission observed The reply furnished to the appellant is just and proper and hence the case might be dismissed; Appellant : Absent Respondent : Shri K.P; Ghosh, General Manager cum PIO, Airport Authority of India During the hearing, the respondent PIO submitted that they had provided the requisite reply vide their letter dated 20.04.2016; He further submitted that another reply was also provided on 08.05.16. Final order: With the above observation, the appeal is disposed of. Outcome: APPEAL_DISPOSED",
+  "penalty_imposed": false,
+  "penalty_amount": null,
+  "key_findings": [
+    "Appellant : Absent Respondent : Shri K.P",
+    "Ghosh, General Manager cum PIO, Airport Authority of India During the hearing, the respondent PIO submitted that they had provided the requisite reply vide their letter dated 20.04.2016",
+    "He further submitted that another reply was also provided on 08.05.16",
+    "The reply furnished to the appellant is just and proper and hence the case might be dismissed",
+    "Since the same was not available in the case record, the respondent PIO was asked to read this reply over the VC facility"
+  ],
+  "public_interest_discussed": false,
+  "source": "CIC",
+  "source_file": "data\\extracted\\cic\\CIC_AAOIN_A_2017_102333.txt",
+  "extraction_confidence": 0.97
+}
