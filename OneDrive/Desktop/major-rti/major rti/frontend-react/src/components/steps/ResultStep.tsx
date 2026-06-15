@@ -9,6 +9,7 @@ import {
   RetrievedReference,
   RoutingResult,
 } from '../../lib/types'
+import { displayDepartmentName } from '../../lib/departments'
 
 interface ResultStepProps {
   caseId: string
@@ -63,6 +64,7 @@ export default function ResultStep({
   const citations = evaluation.final_recom.citations.length
     ? evaluation.final_recom.citations.join(', ')
     : 'No exemption sections triggered'
+  const departmentDisplay = displayDepartmentName(routing.primary_department, routing.department_name)
 
   useEffect(() => {
     setReplyText(neutralizeDecisionLanguage(draftText))
@@ -222,7 +224,7 @@ export default function ResultStep({
           <div className="space-y-2 text-[16px]">
             <div className="flex justify-between gap-3">
               <span className="text-[var(--t3)]">Department</span>
-              <span className="font-bold text-[var(--t1)] uppercase">{routing.primary_department}</span>
+              <span className="font-bold text-[var(--t1)] text-right">{departmentDisplay}</span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-[var(--t3)]">Research confidence</span>
@@ -290,8 +292,11 @@ export default function ResultStep({
                   {ref.relevant_section && (
                     <div className="mt-1 text-[var(--t3)] font-semibold">Section: {ref.relevant_section}</div>
                   )}
-                  <p className="mt-2 text-[var(--t2)] leading-relaxed line-clamp-4">{ref.extracted_passage}</p>
-                  <p className="mt-2 text-[var(--t1)] font-semibold leading-relaxed">{ref.why_relevant}</p>
+                  <p className="mt-2 text-[var(--t2)] leading-relaxed line-clamp-3">{ref.extracted_passage}</p>
+                  <div className="mt-2 rounded border border-[var(--s2)] bg-[var(--s0)] px-2.5 py-2">
+                    <span className="block text-[12px] font-bold uppercase tracking-wide text-[var(--t3)]">Case summary</span>
+                    <p className="mt-1 text-[var(--t1)] font-semibold leading-relaxed">{ref.why_relevant}</p>
+                  </div>
                 </div>
               ))}
 

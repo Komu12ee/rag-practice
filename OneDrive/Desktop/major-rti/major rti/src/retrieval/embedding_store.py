@@ -236,10 +236,13 @@ class EmbeddingStore:
             "outcome": chunk.outcome or "",
             "department": chunk.department or "",
             "public_authority": scalar(rich.get("public_authority") or chunk.department),
+            "hearing_date": scalar(rich.get("hearing_date")),
+            "reasoning_pattern": scalar(rich.get("reasoning_pattern")),
+            "pio_learning_signal": scalar(rich.get("pio_learning_signal")),
             "rti_sections": scalar(rich.get("rti_sections")),
             "exemption_sections": scalar(rich.get("exemption_sections")),
             "keywords": scalar(rich.get("keywords")),
-            "commissioner": chunk.commissioner or "",
+            "commissioner": scalar(rich.get("commissioner") or chunk.commissioner),
         }
 
     @staticmethod

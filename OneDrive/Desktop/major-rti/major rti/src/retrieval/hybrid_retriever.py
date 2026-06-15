@@ -47,6 +47,11 @@ class RetrievedChunk(BaseModel):
     decision_date: Optional[str] = None
     outcome: Optional[str] = None
     department: Optional[str] = None
+    public_authority: Optional[str] = None
+    hearing_date: Optional[str] = None
+    commissioner: Optional[str] = None
+    reasoning_pattern: Optional[str] = None
+    pio_learning_signal: Optional[str] = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     bm25_score: Optional[float] = None
     vector_score: Optional[float] = None
@@ -251,6 +256,11 @@ class HybridRetriever:
                     decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
                     outcome=self._empty_to_none(metadata.get("outcome")),
                     department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+                    public_authority=self._empty_to_none(metadata.get("public_authority")),
+                    hearing_date=self._empty_to_none(metadata.get("hearing_date")),
+                    commissioner=self._empty_to_none(metadata.get("commissioner")),
+                    reasoning_pattern=self._empty_to_none(metadata.get("reasoning_pattern")),
+                    pio_learning_signal=self._empty_to_none(metadata.get("pio_learning_signal")),
                     metadata=metadata,
                     bm25_score=item.score,
                     vector_score=None,
@@ -281,6 +291,11 @@ class HybridRetriever:
                     decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
                     outcome=self._empty_to_none(metadata.get("outcome")),
                     department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+                    public_authority=self._empty_to_none(metadata.get("public_authority")),
+                    hearing_date=self._empty_to_none(metadata.get("hearing_date")),
+                    commissioner=self._empty_to_none(metadata.get("commissioner")),
+                    reasoning_pattern=self._empty_to_none(metadata.get("reasoning_pattern")),
+                    pio_learning_signal=self._empty_to_none(metadata.get("pio_learning_signal")),
                     metadata=metadata,
                     bm25_score=None,
                     vector_score=item.score,
@@ -301,6 +316,11 @@ class HybridRetriever:
             decision_date=self._empty_to_none(metadata.get("decision_date") or metadata.get("date")),
             outcome=self._empty_to_none(metadata.get("outcome")),
             department=self._empty_to_none(metadata.get("department") or metadata.get("public_authority")),
+            public_authority=self._empty_to_none(metadata.get("public_authority")),
+            hearing_date=self._empty_to_none(metadata.get("hearing_date")),
+            commissioner=self._empty_to_none(metadata.get("commissioner")),
+            reasoning_pattern=self._empty_to_none(metadata.get("reasoning_pattern")),
+            pio_learning_signal=self._empty_to_none(metadata.get("pio_learning_signal")),
             metadata=metadata,
             bm25_score=item.get("bm25_score"),
             vector_score=item.get("vector_score"),

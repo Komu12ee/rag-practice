@@ -7,6 +7,7 @@ export interface OCRResult {
 
 export interface RoutingResult {
   primary_department: string;
+  department_name?: string;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   reasoning: string;
   alternatives: string[];

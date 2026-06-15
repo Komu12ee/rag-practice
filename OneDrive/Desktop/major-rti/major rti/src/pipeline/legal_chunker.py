@@ -297,11 +297,14 @@ class LegalChunker:
             "chunk_type": chunk_type,
             "outcome": case_metadata.outcome,
             "public_authority": case_metadata.public_authority,
+            "hearing_date": case_metadata.hearing_date,
+            "commissioner": case_metadata.commissioner_name,
             "date": case_metadata.decision_date or case_metadata.hearing_date or case_metadata.rti_application_date,
             "rti_sections": case_metadata.rti_sections or case_metadata.sections_invoked,
             "exemption_sections": case_metadata.exemption_sections,
             "sections_invoked": case_metadata.sections_invoked,
             "reasoning_pattern": case_metadata.reasoning_pattern,
+            "pio_learning_signal": case_metadata.pio_learning_signal,
             "entities_person": case_metadata.entities_person,
             "entities_authority": case_metadata.entities_authority,
             "entities_department": case_metadata.entities_department,
@@ -513,10 +516,14 @@ class TestLegalChunker(unittest.TestCase):
         case = ExtractedCase(
             case_number="CIC/MFINB/A/2024/001234",
             decision_date="2025-04-05",
+            hearing_date="2025-03-30",
             commissioner_name="Shri Example Kumar",
+            public_authority="Revenue Department",
             department="Department of Revenue",
             sections_invoked=["8(1)(j)", "20(1)"],
             outcome="PENALTY",
+            reasoning_pattern=["Wrong blanket denial"],
+            pio_learning_signal="Give pointwise reasoned replies.",
             penalty_imposed=True,
             public_interest_discussed=True,
             source="CIC",
@@ -550,6 +557,16 @@ class TestLegalChunker(unittest.TestCase):
                 self.assertTrue(chunk.text.startswith(f"[{chunk.chunk_type}]"))
                 self.assertGreater(len(chunk.text), 0)
                 self.assertGreater(chunk.token_count, 0)
+                for field in (
+                    "case_number",
+                    "public_authority",
+                    "outcome",
+                    "hearing_date",
+                    "reasoning_pattern",
+                    "chunk_type",
+                    "pio_learning_signal",
+                ):
+                    self.assertIn(field, chunk.metadata)
 
             jsonl_path = Path(tmp) / "chunks" / "CIC" / "CIC_MFINB_A_2024_001234.jsonl"
             self.assertTrue(jsonl_path.exists())

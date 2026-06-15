@@ -88,6 +88,7 @@ class ExtractedInformationReact(BaseModel):
 
 class RoutingResultReact(BaseModel):
     primary_department: str
+    department_name: Optional[str] = None
     confidence: str
     reasoning: str
     alternatives: List[str]
@@ -257,6 +258,7 @@ async def route_endpoint(req: RouteRequest):
         
         return {
             "primary_department": routing_res.primary_department,
+            "department_name": routing_res.department_name,
             "confidence": routing_res.confidence_band,
             "reasoning": routing_res.reasoning,
             "alternatives": alternatives,

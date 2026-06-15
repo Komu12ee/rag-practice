@@ -2,6 +2,7 @@ import { CheckCircle2, RotateCcw, Copy, Check, FileDown, Printer, FileSpreadshee
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import { AuditRecord } from '../../lib/types'
+import { displayDepartmentName } from '../../lib/departments'
 
 interface CompletedStepProps {
   loggedRecord: AuditRecord | null
@@ -25,7 +26,10 @@ export default function CompletedStep({ loggedRecord, rawText, onReset }: Comple
     setTimeout(() => setCopied(false), 1800)
   }
 
-  const routingDept = loggedRecord.routing?.primary_department || 'N/A'
+  const routingDept = displayDepartmentName(
+    loggedRecord.routing?.primary_department,
+    loggedRecord.routing?.department_name,
+  )
   const infoClassification = loggedRecord.extracted_info?.classification_type || 'N/A'
   const triggeredRules = loggedRecord.evaluation?.exemption_flags
     ?.map(f => f.section)
@@ -35,7 +39,7 @@ export default function CompletedStep({ loggedRecord, rawText, onReset }: Comple
     { label: 'Audit ID / Case ID', value: audit_id || 'N/A', mono: true },
     { label: 'Timestamp', value: formattedTime },
     { label: 'Record Status', value: pio_action_taken === 'PENDING' ? 'Assistance logged for PIO review' : pio_action_taken },
-    { label: 'Assigned Department', value: routingDept.toUpperCase() },
+    { label: 'Assigned Department', value: routingDept },
     { label: 'Information Classification', value: infoClassification.toUpperCase() },
     { label: 'Triggered Legal Rules', value: triggeredRules },
   ]

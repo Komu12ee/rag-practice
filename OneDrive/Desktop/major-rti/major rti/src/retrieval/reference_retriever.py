@@ -30,6 +30,22 @@ from retrieval.hybrid_retriever import HybridRetriever, RetrievedChunk
 
 logger = logging.getLogger(__name__)
 
+CHUNK_TYPE_PRIORITY = {
+    "PRECEDENT_SUMMARY": 1,
+    "COMMISSION_OBSERVATION": 2,
+    "COMMISSION_OBSERVATIONS": 2,
+    "COMMISSION_FINDINGS": 2,
+    "FINAL_ORDER": 3,
+    "PIO_LEARNING_SIGNAL": 4,
+    "INFORMATION_REQUESTED": 5,
+    "FACTS": 6,
+    "ENTITY_CONTEXT": 7,
+}
+
+COMMITTEE_QUERY_RE = re.compile(
+    r"(?i)\b(committee|report|proceedings?|members?|compliance|follow\s+up|status)\b"
+)
+
 
 class ReferenceCard(BaseModel):
     source_type: str
@@ -69,6 +85,7 @@ class ReferenceRetriever:
         chunks = self._search_all(query)
         ranked = self._rerank(
             chunks=chunks,
+            raw_text=raw_text,
             sections=sections or [],
             department_context=department_context,
             outcome_hint=outcome_hint,
@@ -82,22 +99,28 @@ class ReferenceRetriever:
             if title in seen_titles:
                 continue
             seen_titles.add(title)
+            summary = self._case_summary(chunk, metadata)
             cards.append(
                 ReferenceCard(
                     source_type=self._source_type(chunk),
                     title_or_case_number=title,
                     case_number=chunk.case_number,
-                    public_authority=str(metadata.get("public_authority") or chunk.department or ""),
+                    public_authority=str(metadata.get("public_authority") or chunk.public_authority or chunk.department or ""),
                     outcome=str(metadata.get("outcome") or chunk.outcome or ""),
                     relevant_section=self._section(chunk),
                     extracted_passage=self._compact(chunk.text, 620),
-                    why_relevant="; ".join(reasons) or "Matched the RTI query in the indexed legal corpus.",
+                    why_relevant=summary,
                     confidence_score=round(max(0.0, min(1.0, score)), 3),
                     metadata={
                         "chunk_type": chunk.chunk_type,
                         "date": metadata.get("date") or metadata.get("decision_date") or chunk.decision_date,
+                        "hearing_date": metadata.get("hearing_date") or chunk.hearing_date,
+                        "commissioner": metadata.get("commissioner") or chunk.commissioner,
+                        "reasoning_pattern": metadata.get("reasoning_pattern") or chunk.reasoning_pattern,
+                        "pio_learning_signal": metadata.get("pio_learning_signal") or chunk.pio_learning_signal,
                         "rti_sections": metadata.get("rti_sections") or metadata.get("sections_invoked") or [],
                         "exemption_sections": metadata.get("exemption_sections") or [],
+                        "relevance_reason": "; ".join(reasons),
                     },
                 )
             )
@@ -122,6 +145,7 @@ class ReferenceRetriever:
     def _rerank(
         self,
         chunks: list[RetrievedChunk],
+        raw_text: str,
         sections: list[str],
         department_context: str,
         outcome_hint: str,
@@ -131,6 +155,7 @@ class ReferenceRetriever:
         dept = department_context.lower()
         outcome = outcome_hint.lower()
         info = info_type.lower()
+        committee_query = bool(COMMITTEE_QUERY_RE.search(" ".join([raw_text, info, department_context])))
         ranked: list[tuple[float, RetrievedChunk, list[str]]] = []
         for chunk in chunks:
             metadata = getattr(chunk, "metadata", {}) if hasattr(chunk, "metadata") else {}
@@ -141,7 +166,10 @@ class ReferenceRetriever:
                 chunk.outcome or "",
                 str(metadata),
             ]).lower()
-            score = 0.50 * float(chunk.rrf_score or 0.0)
+            priority = CHUNK_TYPE_PRIORITY.get(chunk.chunk_type, 99)
+            score = 0.45 * float(chunk.rrf_score or 0.0)
+            if priority < 99:
+                score += max(0.0, 0.22 - (priority - 1) * 0.025)
             reasons: list[str] = []
             if section_set and any(section in self._norm(text_blob) for section in section_set):
                 score += 0.20
@@ -155,11 +183,30 @@ class ReferenceRetriever:
             if info and info.replace("_", " ") in text_blob:
                 score += 0.06
                 reasons.append("matched information type")
-            if chunk.chunk_type in {"PRECEDENT_SUMMARY", "COMMISSION_OBSERVATIONS", "FINAL_ORDER", "COMMISSION_FINDINGS"}:
-                score += 0.10
+            if priority < 99:
                 reasons.append(f"strong legal chunk type: {chunk.chunk_type}")
-            ranked.append((min(score, 1.0), chunk, reasons))
-        return sorted(ranked, key=lambda item: (-item[0], item[1].rank, item[1].case_number))
+            if committee_query and chunk.chunk_type in {
+                "PRECEDENT_SUMMARY",
+                "COMMISSION_OBSERVATION",
+                "COMMISSION_OBSERVATIONS",
+                "COMMISSION_FINDINGS",
+                "FINAL_ORDER",
+                "PIO_LEARNING_SIGNAL",
+            }:
+                score += 0.12
+                reasons.append("committee/report query boosted commission reasoning")
+            if committee_query and chunk.chunk_type in {"RTI_REQUEST", "INFORMATION_REQUESTED", "FACTS"}:
+                score -= 0.04
+            ranked.append((max(0.0, min(score, 1.0)), chunk, reasons))
+        return sorted(
+            ranked,
+            key=lambda item: (
+                -item[0],
+                CHUNK_TYPE_PRIORITY.get(item[1].chunk_type, 99),
+                item[1].rank,
+                item[1].case_number,
+            ),
+        )
 
     @staticmethod
     def _build_query(raw_text: str, extracted_parameters: dict[str, Any], sections: Optional[list[str]], department_context: str) -> str:
@@ -205,6 +252,53 @@ class ReferenceRetriever:
     def _compact(text: str, limit: int) -> str:
         text = " ".join(str(text or "").split())
         return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+    @classmethod
+    def _case_summary(cls, chunk: RetrievedChunk, metadata: dict[str, Any]) -> str:
+        """Return a short user-facing summary so a PIO can judge relevance quickly."""
+        text = cls._strip_chunk_label(chunk.text or "")
+        reasoning = cls._metadata_text(metadata.get("reasoning_pattern") or chunk.reasoning_pattern)
+        learning = cls._metadata_text(metadata.get("pio_learning_signal") or chunk.pio_learning_signal)
+        outcome = str(metadata.get("outcome") or chunk.outcome or "").replace("_", " ").title()
+        authority = str(metadata.get("public_authority") or chunk.public_authority or chunk.department or "").strip()
+
+        if chunk.chunk_type in {"PRECEDENT_SUMMARY", "FULL_SUMMARY"} and text:
+            base = text
+        elif chunk.chunk_type in {"COMMISSION_OBSERVATION", "COMMISSION_OBSERVATIONS", "COMMISSION_FINDINGS", "FINAL_ORDER"}:
+            base = f"Commission reasoning: {text}"
+        elif chunk.chunk_type in {"RTI_REQUEST", "INFORMATION_REQUESTED", "FACTS"}:
+            base = f"Request context: {text}"
+        elif chunk.chunk_type == "PIO_LEARNING_SIGNAL":
+            base = f"PIO learning: {text}"
+        else:
+            base = text
+
+        extras = []
+        if authority:
+            extras.append(f"Authority: {authority}")
+        if outcome:
+            extras.append(f"Outcome: {outcome}")
+        if reasoning:
+            extras.append(f"Pattern: {reasoning}")
+        elif learning:
+            extras.append(f"PIO signal: {learning}")
+
+        summary = cls._compact(base, 260)
+        if extras:
+            summary = f"{summary} {' | '.join(extras[:2])}."
+        return cls._compact(summary, 360)
+
+    @staticmethod
+    def _strip_chunk_label(text: str) -> str:
+        return re.sub(r"^\s*\[[A-Z_]+\]\s*", "", " ".join(str(text or "").split())).strip()
+
+    @staticmethod
+    def _metadata_text(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, (list, tuple, set)):
+            return "; ".join(str(item).strip() for item in value if str(item).strip())
+        return str(value).strip()
 
     @staticmethod
     def _norm(text: str) -> str:
