@@ -31,7 +31,6 @@ from extractor import extract_information
 from exemption_rules import evaluate_exemptions
 from llm_analyzer import analyze_exemption_applicability
 from disclosure_balancer import compute_disclosure_balance
-from recommendation_generator import generate_final_recommendation
 from rag_engine import _load_sections
 
 # Ensure database is initialized
@@ -298,10 +297,15 @@ async def evaluate_exemptions_endpoint(req: ExtractedInformationReact):
         # 3. Side-by-side disclosure balancer (Agent 4)
         balance_res = compute_disclosure_balance(text_query, rule_flags)
         
-        # 4. Generate synthesis recommendation (Agent 5)
-        # Fetch current routing details to check for transfers
-        routing_res = classify_department(text_query, LAST_LANGUAGE)
-        final_recom = generate_final_recommendation(text_query, routing_res, info, layer_b_res, balance_res)
+        # 4. Generate neutral legal research synthesis metadata.
+        # This intentionally does not choose approve/reject/transfer/partial disclosure.
+        cited_sections = []
+        for flag in exemption_flags:
+            if flag.section and flag.section not in cited_sections:
+                cited_sections.append(flag.section)
+        for ref in layer_b_res.exemptions_analysis:
+            if ref.section and ref.section not in cited_sections:
+                cited_sections.append(ref.section)
         
         # Map the outputs to React schemas
         flags_mapped = [
@@ -334,12 +338,18 @@ async def evaluate_exemptions_endpoint(req: ExtractedInformationReact):
             "balancing_factors": balance_res.balancing_factors
         }
         
+        research_reasoning = (
+            "The application has been analysed for potentially relevant RTI Act provisions, "
+            "statutory exemption/disclosure considerations, routing context, and public interest factors. "
+            "This synthesis is legal research assistance only and does not select a final PIO outcome."
+        )
         recommendation_mapped = {
-            "action": final_recom.recommendation,
-            "confidence": final_recom.confidence_band,
-            "reasoning": final_recom.primary_reasoning,
-            "citations": final_recom.sections_applied,
-            "timeline": final_recom.suggested_pio_action
+            # Legacy API field retained for frontend compatibility; not displayed as a decision.
+            "action": "APPROVE",
+            "confidence": "HIGH" if cited_sections else "MEDIUM",
+            "reasoning": research_reasoning,
+            "citations": cited_sections,
+            "timeline": "PIO to independently determine the statutory response after reviewing records, custody, exemptions, and public interest factors."
         }
         
         return {
@@ -490,7 +500,7 @@ async def legal_sections_endpoint():
 
 @app.post("/api/generate_draft")
 async def generate_draft_endpoint(req: GenerateDraftRequest):
-    """Generate a draft response letter using Sarvam AI, with a template fallback."""
+    """Generate an assisted RTI draft using legal research context, with a template fallback."""
     try:
         department = req.department
         is_chips = req.is_chips
@@ -513,37 +523,42 @@ async def generate_draft_endpoint(req: GenerateDraftRequest):
             })
             
         if not is_chips:
-            prompt = f"""You are a drafting assistant for a Public Information Officer (PIO) at Chhattisgarh Infotech Promotion Society (CHiPS), Raipur, Chhattisgarh.
-Draft a concise, formal, and legally correct Section 6(3) Transfer Directive in English.
+            prompt = f"""You are an RTI Legal Intelligence Assistant for a Public Information Officer (PIO) at Chhattisgarh Infotech Promotion Society (CHiPS), Raipur, Chhattisgarh.
+Draft a concise legal research and drafting assistance note in English.
 
-The transfer directive note should:
-1. State that on examination of the RTI application, the subject matter falls outside the jurisdiction of CHiPS.
-2. Specifically note that the application relates to {department} (for example, if it concerns citizen data/portals not legally owned by CHiPS).
-3. State that the application is being transferred to the PIO of {department} under Section 6(3) of the RTI Act 2005.
-4. Instruct that the information should be provided directly to the applicant by the transferee department.
-5. Sound like an official government internal note / order sheet.
-6. Be 100-180 words maximum.
+The note must NOT decide, recommend, or instruct that the application be transferred, rejected, approved, or partially disclosed. Do not write phrases like "it is recommended to transfer", "recommended action", "PIO should reject", or "approve the request".
+
+The assistance note should:
+1. State that the subject matter may involve records outside CHiPS custody based on the available routing analysis.
+2. Identify Section 6(3) of the RTI Act, 2005 as a provision the PIO may independently examine if another public authority appears to hold the requested records.
+3. Summarize why {department} may be relevant, without making the final transfer decision.
+4. Present the legal/factual considerations neutrally for the PIO's independent determination.
+5. Include this sentence exactly once: "This note provides legal research and drafting assistance only; the final decision under the RTI Act, 2005 remains with the concerned PIO."
+6. Be 120-220 words maximum.
 7. Start exactly with: "On examination of the RTI application:"
 
 ---
 RTI DATA:
 - Target Department: {department}
-- System recommendation reasoning: {routing_dict.get('reasoning')}
+- Routing research reasoning: {routing_dict.get('reasoning')}
 - RTI text snippet: {LAST_RAW_TEXT[:300]}...
 ---
 """
         else:
-            prompt = f"""You are an expert drafting assistant for a Public Information Officer (PIO) at Chhattisgarh Infotech Promotion Society (CHiPS), Raipur, Chhattisgarh.
-Draft a professional, authoritative, and concise internal decision note in English based on the legal analysis and parameters below.
+            prompt = f"""You are an RTI Legal Intelligence Assistant for a Public Information Officer (PIO) at Chhattisgarh Infotech Promotion Society (CHiPS), Raipur, Chhattisgarh.
+Draft a professional legal research and drafting assistance note in English based on the legal analysis and parameters below.
+
+The note must NOT decide, recommend, or instruct that the application be approved, rejected, partially disclosed, or transferred. Do not write phrases like "recommended decision", "recommended action", "it is recommended to", "approve the request", "reject the request", or "transfer the application".
 
 The note MUST:
-1. State the jurisdiction determination: confirm that the subject matter falls within the jurisdiction of CHiPS.
-2. Summarize the information requested (referencing systems: {confirmed_info_dict.get('systems', [])}, entities: {confirmed_info_dict.get('entities', [])}).
-3. State the recommended decision (Approve, Reject, or Partially Approve) and cite the exact statutory sections applied (e.g. Section 8(1)(d) for commercial confidence, Section 8(1)(j) for personal privacy, or Section 10 for severability and partial disclosure).
-4. Provide the exact legal/factual basis: summarize why the exemption applies or doesn't apply based on the facts (mentioning private data concerns or public interest override allegations, if any).
-5. Sound like an official government internal note / order sheet, using formal, objective, and legally precise language.
-6. Be 150-250 words maximum.
-7. Start exactly with: "On examination of the RTI application:"
+1. Summarize the information requested (referencing systems: {confirmed_info_dict.get('systems', [])}, entities: {confirmed_info_dict.get('entities', [])}).
+2. Identify potentially relevant RTI Act provisions and exemption/disclosure considerations, including exact statutory sections where available.
+3. Present supporting legal reasoning and factual considerations neutrally for the PIO's independent determination.
+4. Include arguments for disclosure and exemption considerations, without selecting a final outcome.
+5. Include this sentence exactly once: "This note provides legal research and drafting assistance only; the final decision under the RTI Act, 2005 remains with the concerned PIO."
+6. Sound like an official government legal research note, using formal, objective, and legally precise language.
+7. Be 180-280 words maximum.
+8. Start exactly with: "On examination of the RTI application:"
 
 ---
 LEGAL ANALYSIS CONTEXT:
@@ -558,9 +573,8 @@ LEGAL ANALYSIS CONTEXT:
 - Pro-Disclosure Arguments: {balance_dict.get('pro_disclosure_argument')}
 - Pro-Exemption Arguments: {balance_dict.get('pro_exemption_argument')}
 - Key Balancing Factors: {balance_dict.get('balancing_factors')}
-- Final Synthesized Recommendation: {final_recom_dict.get('action')}
-- Primary Recommendation Reasoning: {final_recom_dict.get('reasoning')}
-- Suggested Action: {final_recom_dict.get('timeline')}
+- Legal Research Summary: {final_recom_dict.get('reasoning')}
+- Procedural Timeline Context: {final_recom_dict.get('timeline')}
 - Sections Cited: {final_recom_dict.get('citations')}
 ---
 """
@@ -575,14 +589,28 @@ LEGAL ANALYSIS CONTEXT:
         except Exception as e:
             # Fallback
             if not is_chips:
-                fallback = f"On examination of the RTI application:\nThe application relates to the jurisdiction of {department}, not CHiPS. Recommended action: Transfer to the concerned department under Section 6(3) of the RTI Act, 2005 within 5 days of receipt."
+                fallback = (
+                    "On examination of the RTI application:\n"
+                    f"The subject matter may involve records held by {department}. Section 6(3) of the RTI Act, 2005 may therefore be relevant for the PIO's independent examination if another public authority holds the requested information. "
+                    "The available routing analysis should be treated as research assistance and not as a final transfer decision. "
+                    "This note provides legal research and drafting assistance only; the final decision under the RTI Act, 2005 remains with the concerned PIO."
+                )
             else:
                 exempt_sections = [flag.section for flag in req.exemption_flags]
                 info_type = confirmed_info_dict.get('classification_type', 'other')
                 if exempt_sections:
-                    fallback = f"On examination of the RTI application:\nThe information requested pertains to CHiPS but involves {info_type} details. This information is exempt from disclosure under {', '.join(exempt_sections)} of the RTI Act, 2005. Recommended action: Reject the request point-wise, specifying the exemption clauses."
+                    fallback = (
+                        "On examination of the RTI application:\n"
+                        f"The request involves {info_type} details and may require examination of {', '.join(exempt_sections)} of the RTI Act, 2005. "
+                        "The PIO may consider the statutory text, public interest factors, and severability requirements before forming an independent decision. "
+                        "This note provides legal research and drafting assistance only; the final decision under the RTI Act, 2005 remains with the concerned PIO."
+                    )
                 else:
-                    fallback = f"On examination of the RTI application:\nThe information requested falls within the jurisdiction of CHiPS and does not trigger any exemptions. Recommended action: Approve the request and disclose the records."
+                    fallback = (
+                        "On examination of the RTI application:\n"
+                        "The available analysis has not identified a specific statutory exemption trigger. The PIO may independently verify record availability, custody, and any applicable RTI Act limitations before issuing a reply. "
+                        "This note provides legal research and drafting assistance only; the final decision under the RTI Act, 2005 remains with the concerned PIO."
+                    )
             return {"draft": fallback, "warning": "Sarvam AI is offline. A heuristic template draft was generated."}
             
     except Exception as e:

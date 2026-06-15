@@ -34,7 +34,7 @@ export default function CompletedStep({ loggedRecord, rawText, onReset }: Comple
   const rows: { label: string; value: string; mono?: boolean }[] = [
     { label: 'Audit ID / Case ID', value: audit_id || 'N/A', mono: true },
     { label: 'Timestamp', value: formattedTime },
-    { label: 'PIO Decision Action', value: pio_action_taken },
+    { label: 'Record Status', value: pio_action_taken === 'PENDING' ? 'Assistance logged for PIO review' : pio_action_taken },
     { label: 'Assigned Department', value: routingDept.toUpperCase() },
     { label: 'Information Classification', value: infoClassification.toUpperCase() },
     { label: 'Triggered Legal Rules', value: triggeredRules },
@@ -45,12 +45,12 @@ export default function CompletedStep({ loggedRecord, rawText, onReset }: Comple
     const data = [
       ['Audit ID / Case ID', loggedRecord.audit_id || ''],
       ['Timestamp', formattedTime],
-      ['PIO Action Taken', loggedRecord.pio_action_taken],
+      ['Record Status', loggedRecord.pio_action_taken],
       ['Assigned Department', routingDept],
       ['Information Type', infoClassification],
       ['Triggered Rules', triggeredRules],
       ['Immutable Block Hash', loggedRecord.current_hash || ''],
-      ['PIO Order Sheet Text', loggedRecord.reasoning_notes || ''],
+      ['Assisted Draft Text', loggedRecord.reasoning_notes || ''],
     ]
     const content = [headers, ...data]
       .map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(','))
@@ -127,10 +127,10 @@ export default function CompletedStep({ loggedRecord, rawText, onReset }: Comple
 
         <div className="space-y-1">
           <h2 className="text-xl font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-            Decision Registered
+            Assistance Record Logged
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            The RTI decision has been signed and logged to the immutable SQLite SHA-256 blockchain registry.
+            The legal research and drafting assistance record has been logged to the immutable SQLite SHA-256 audit registry.
           </p>
         </div>
 

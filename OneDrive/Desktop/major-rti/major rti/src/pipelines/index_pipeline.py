@@ -119,6 +119,8 @@ class DataIndexingPipeline:
         mode: str = "regex-only",
         output: Optional[str | Path] = None,
         rebuild_index: bool = True,
+        force: bool = False,
+        skip_embeddings: bool = False,
     ) -> IndexPipelineSummary:
         """Extract, process, embed, and index a source PDF folder."""
         start = time.perf_counter()
@@ -127,7 +129,14 @@ class DataIndexingPipeline:
         use_llm = self._use_llm(mode)
         summary = IndexPipelineSummary()
 
-        logger.info("Starting indexing pipeline | source=%s mode=%s output=%s", source_path, mode, output_path)
+        logger.info(
+            "Starting indexing pipeline | source=%s mode=%s output=%s force=%s skip_embeddings=%s",
+            source_path,
+            mode,
+            output_path,
+            force,
+            skip_embeddings,
+        )
 
         extraction_counts = batch_extract(source_path, output_path)
         summary.pdfs_total = extraction_counts.get("total", 0)
@@ -151,6 +160,8 @@ class DataIndexingPipeline:
                     source_folder=source_path,
                     mode=mode,
                     use_llm=use_llm,
+                    force=force,
+                    skip_embeddings=skip_embeddings,
                 )
                 if processed:
                     summary.docs_processed += 1
@@ -183,6 +194,8 @@ class DataIndexingPipeline:
         source_folder: Path,
         mode: str,
         use_llm: bool,
+        force: bool = False,
+        skip_embeddings: bool = False,
     ) -> tuple[bool, int, int]:
         text = text_file.read_text(encoding="utf-8", errors="replace")
         if not text.strip():
@@ -197,20 +210,21 @@ class DataIndexingPipeline:
         )
 
         chunk_path = self._chunk_path(extracted_case.source, extracted_case.case_number)
-        if self.metadata_store.check_exists(extracted_case.case_number) and chunk_path.exists():
+        if not force and self.metadata_store.check_exists(extracted_case.case_number) and chunk_path.exists():
             logger.info("Skipping already indexed case: %s", extracted_case.case_number)
             return False, 0, 0
 
         self.metadata_store.save(extracted_case)
         chunks = self.chunker.chunk(segmented, extracted_case, save=True)
-        embedded_count = self.embedding_store.embed_and_store(chunks)
+        embedded_count = 0 if skip_embeddings else self.embedding_store.embed_and_store(chunks)
 
         logger.info(
-            "Indexed case | case_number=%s mode=%s chunks=%s embeddings=%s",
+            "Indexed case | case_number=%s mode=%s chunks=%s embeddings=%s skip_embeddings=%s",
             extracted_case.case_number,
             mode,
             len(chunks),
             embedded_count,
+            skip_embeddings,
         )
         return True, len(chunks), embedded_count
 
@@ -249,6 +263,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", choices=["regex-only", "llm"], default="regex-only")
     parser.add_argument("--rebuild-index", action="store_true", help="Only rebuild BM25 from existing data/chunks unless --source is also provided.")
     parser.add_argument("--no-rebuild-index", action="store_true", help="Skip BM25 rebuild after processing source PDFs.")
+    parser.add_argument("--force", action="store_true", help="Reprocess already indexed cases and overwrite metadata/chunk JSONL files.")
+    parser.add_argument("--skip-embeddings", action="store_true", help="Write metadata/chunk JSONL and BM25 only; do not update the vector embedding store.")
     parser.add_argument("--log-file", default=str(DEFAULT_LOG_PATH), help="Pipeline log file. Default: data/logs/pipeline.log")
     return parser.parse_args()
 
@@ -273,6 +289,8 @@ def main() -> int:
             mode=args.mode,
             output=args.output,
             rebuild_index=not args.no_rebuild_index,
+            force=args.force,
+            skip_embeddings=args.skip_embeddings,
         )
         print(json.dumps(summary.as_dict(), indent=2))
         return 0 if summary.errors == 0 and summary.extraction_failed == 0 else 1

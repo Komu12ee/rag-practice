@@ -14,7 +14,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // Python backend port (standard fastapi/flask/etc.)
+        target: 'http://localhost:8002', // FastAPI backend started by scratch/start_backend.py
         changeOrigin: true,
       }
     }

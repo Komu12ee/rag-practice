@@ -1,8 +1,9 @@
-import { useReducer, useEffect, useState } from 'react'
+import { useReducer, useEffect, useState, useCallback } from 'react'
 import { dashboardReducer, initialState } from './lib/stepMachine'
 import InputStep from './components/steps/InputStep'
-import ReviewStep from './components/steps/ReviewStep'
-import ExemptionStep from './components/steps/ExemptionStep'
+import ProcessingStep from './components/steps/ProcessingStep'
+import ResultStep from './components/steps/ResultStep'
+import RefineStep from './components/steps/RefineStep'
 import CompletedStep from './components/steps/CompletedStep'
 import { OCRResult, RoutingResult, ExtractedInformation, EvaluationResult, AuditRecord } from './lib/types'
 import AuditTrailView from './components/views/AuditTrailView'
@@ -66,19 +67,19 @@ export default function App() {
   const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))
 
   // ----- step machine callbacks -----
-  const handleAnalysisComplete = (payload: {
+  const handleSubmitApplication = (payload: {
     text: string
     language: string
     ocr: OCRResult | null
+  }) => dispatch({ type: 'SUBMIT_APPLICATION', payload })
+
+  const handlePipelineComplete = useCallback((payload: {
     routing: RoutingResult
     extraction: ExtractedInformation
-  }) => dispatch({ type: 'START_ANALYSIS', payload })
-
-  const handleConfirmParameters = (confirmed: ExtractedInformation, evaluation: EvaluationResult | null) =>
-    dispatch({ type: 'CONFIRM_PARAMETERS', payload: { confirmed, evaluation } })
-
-  const handleEvaluationLoaded = (evaluation: EvaluationResult) =>
-    dispatch({ type: 'SET_EVALUATION', payload: { evaluation } })
+    evaluation: EvaluationResult
+    draft: string
+    warning?: string | null
+  }) => dispatch({ type: 'PIPELINE_COMPLETE', payload }), [])
 
   const handleDecisionLogged = (record: AuditRecord) => {
     dispatch({ type: 'LOG_DECISION', payload: { record } })
@@ -94,6 +95,13 @@ export default function App() {
     dispatch({ type: 'START_OVER' })
   }
   const handleEditParameters = () => dispatch({ type: 'EDIT_PARAMETERS' })
+  const handleBackToResult = () => dispatch({ type: 'BACK_TO_RESULT' })
+  const handleDraftRegenerated = (payload: {
+    routing: RoutingResult
+    extraction: ExtractedInformation
+    draft: string
+    warning?: string | null
+  }) => dispatch({ type: 'REGENERATE_DRAFT', payload })
 
   const handleNewCase = () => {
     if (window.confirm("Start a new case? Current analysis will be cleared.")) {
@@ -108,7 +116,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* ───────────────────────── ZONE 1 — Masthead ───────────────────────── */}
       {/* ───────────────────────── Top Metadata Bar ───────────────────────── */}
       <div className="h-[30px] flex items-center justify-between px-6 bg-[var(--navy)] text-white select-none shrink-0 z-30 text-[13px]">
@@ -220,43 +228,53 @@ export default function App() {
       <LegalBanner />
 
       {/* ───────────────────────── Main Content ───────────────────────── */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-6 overflow-y-auto">
+      <main className="flex-1 min-h-0 w-full overflow-y-auto">
+        <div className="w-full max-w-7xl mx-auto px-6 py-6">
         {activeTab === 'analysis' && (
           <div className="animate-fadeIn space-y-4">
             {state.step !== 'completed' && (
               <StepIndicator
-                currentStep={state.step === 'input' ? 1 : state.step === 'review_extraction' ? 2 : 3}
+                currentStep={state.step === 'input' ? 1 : state.step === 'processing' ? 2 : 3}
                 completedSteps={
-                  state.step === 'input' ? [] : state.step === 'review_extraction' ? [1] : [1, 2]
+                  state.step === 'input' ? [] : state.step === 'processing' ? [1] : [1, 2]
                 }
               />
             )}
 
             {state.step !== 'completed' ? (
-              state.step === 'exemption_analysis' && state.routingResult && state.extractedInfo ? (
-                <ExemptionStep
+              state.step === 'processing' ? (
+                <ProcessingStep
+                  text={state.rawText}
+                  language={state.language}
+                  ocr={state.ocrResult}
+                  onComplete={handlePipelineComplete}
+                  onStartOver={handleStartOver}
+                />
+              ) : state.step === 'result' && state.routingResult && state.extractedInfo && state.evaluationResult ? (
+                <ResultStep
                   caseId={caseId}
                   rawText={state.rawText}
                   routing={state.routingResult}
-                  confirmedInfo={state.extractedInfo}
-                  evaluationResult={state.evaluationResult}
-                  onEvaluationLoaded={handleEvaluationLoaded}
-                  onDecisionLogged={handleDecisionLogged}
-                  onEditParameters={handleEditParameters}
+                  extraction={state.extractedInfo}
+                  evaluation={state.evaluationResult}
+                  draftText={state.draftText}
+                  draftWarning={state.draftWarning}
+                  draftVersion={state.draftVersion}
+                  onEdit={handleEditParameters}
+                  onLogged={handleDecisionLogged}
+                />
+              ) : state.step === 'refine' && state.routingResult && state.extractedInfo && state.evaluationResult ? (
+                <RefineStep
+                  routing={state.routingResult}
+                  extraction={state.extractedInfo}
+                  evaluation={state.evaluationResult}
+                  onCancel={handleBackToResult}
+                  onRegenerated={handleDraftRegenerated}
                 />
               ) : (
                 <div className="space-y-4 w-full">
                   {state.step === 'input' && (
-                    <InputStep onAnalysisComplete={handleAnalysisComplete} />
-                  )}
-
-                  {state.step === 'review_extraction' && state.routingResult && state.extractedInfo && (
-                    <ReviewStep
-                      routing={state.routingResult}
-                      extraction={state.extractedInfo}
-                      onConfirm={handleConfirmParameters}
-                      onStartOver={handleStartOver}
-                    />
+                    <InputStep onSubmitApplication={handleSubmitApplication} />
                   )}
                 </div>
               )
@@ -277,6 +295,7 @@ export default function App() {
             <AuditTrailView />
           </div>
         )}
+        </div>
       </main>
     </div>
   )

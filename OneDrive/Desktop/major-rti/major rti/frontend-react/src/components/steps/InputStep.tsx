@@ -1,24 +1,21 @@
 import { useState, ChangeEvent, DragEvent, useRef } from 'react'
 import { FileUp, Loader2, FileText, X, FileCheck } from 'lucide-react'
 import ErrorBanner from '../ErrorBanner'
-import { uploadFileForOCR, routeApplication, extractParameters } from '../../lib/api'
-import { OCRResult, RoutingResult, ExtractedInformation } from '../../lib/types'
+import { uploadFileForOCR } from '../../lib/api'
+import { OCRResult } from '../../lib/types'
 
 interface InputStepProps {
-  onAnalysisComplete: (payload: {
+  onSubmitApplication: (payload: {
     text: string
     language: string
     ocr: OCRResult | null
-    routing: RoutingResult
-    extraction: ExtractedInformation
   }) => void
 }
 
-export default function InputStep({ onAnalysisComplete }: InputStepProps) {
+export default function InputStep({ onSubmitApplication }: InputStepProps) {
   const [file, setFile] = useState<File | null>(null)
   const [manualText, setManualText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [stage, setStage] = useState(0) // 0: OCR/Intake, 1: Routing, 2: Classification
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
 
@@ -111,7 +108,6 @@ export default function InputStep({ onAnalysisComplete }: InputStepProps) {
   const handleStartAnalysis = async () => {
     setIsLoading(true)
     setError('')
-    setStage(1) // Stage 1 is Routing
 
     try {
       const text = manualText.trim()
@@ -123,17 +119,9 @@ export default function InputStep({ onAnalysisComplete }: InputStepProps) {
         ? ocrResult.language
         : detectLanguage(text)
 
-      const routingPromise = routeApplication(text, language)
-      setStage(2) // Stage 2 is Parameter Extraction
-      const [routingResult, extractionResult] = await Promise.all([
-        routingPromise,
-        extractParameters(text),
-      ])
-
-      onAnalysisComplete({ text, language, ocr: ocrResult, routing: routingResult, extraction: extractionResult })
+      onSubmitApplication({ text, language, ocr: ocrResult })
     } catch (err: any) {
-      setError(err.message || 'An error occurred during intake processing.')
-    } finally {
+      setError(err.message || 'An error occurred during intake validation.')
       setIsLoading(false)
     }
   }
@@ -275,7 +263,7 @@ export default function InputStep({ onAnalysisComplete }: InputStepProps) {
         {isLoading ? (
           <>
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Process Case Stage: {stage === 1 ? 'Routing classification' : 'Parameter Extraction'}...</span>
+            <span>Starting full RTI pipeline...</span>
           </>
         ) : (
           <>

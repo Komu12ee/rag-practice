@@ -5,8 +5,8 @@ interface StepIndicatorProps {
 
 const STEPS = [
   { num: 1, label: '1 Intake' },
-  { num: 2, label: '2 Validation' },
-  { num: 3, label: '3 Review' },
+  { num: 2, label: '2 Processing' },
+  { num: 3, label: '3 Reply' },
 ]
 
 export default function StepIndicator({ currentStep, completedSteps }: StepIndicatorProps) {

@@ -79,7 +79,8 @@ class LegalExtractor:
     )
     DATE_RE = re.compile(r"\b(?:\d{4}-\d{2}-\d{2}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4})\b")
     SECTION_RE = re.compile(
-        r"(?i)\b(?:Section\s*)?("
+        r"(?i)\b(?:Section|Sec\.?|S\.|u/s)\s*"
+        r"("
         r"6\s*\(\s*3\s*\)|"
         r"7\s*(?:\(\s*1\s*\))?|"
         r"8\s*\(\s*1\s*\)\s*\(\s*[a-j]\s*\)|"
@@ -419,12 +420,25 @@ class LegalExtractor:
         lower = (text or "").lower()
         if penalty_imposed and re.search(r"\b(penalty|show cause|section 20)\b", lower):
             return "PENALTY"
-        if re.search(r"\b(appeal is allowed|appeal.*?allowed|provide.*?information|directed to provide)\b", lower):
-            return "APPEAL_ALLOWED"
         if re.search(r"\b(partly allowed|partially allowed|redact|severance|section 10)\b", lower):
             return "PARTIAL"
-        if re.search(r"\b(appeal is dismissed|complaint is dismissed|rejected|denied)\b", lower):
+        if re.search(
+            r"\b("
+            r"appeal\s+is\s+dismissed|"
+            r"complaint\s+is\s+dismissed|"
+            r"case\s+is\s+dismissed|"
+            r"matter\s+is\s+dismissed|"
+            r"interference\s+of\s+the\s+commission\s+is\s+not\s+called\s+for|"
+            r"no\s+interference\s+is\s+called\s+for|"
+            r"reply\s+(?:provided|furnished)\s+is\s+just\s+and\s+proper|"
+            r"rejected|"
+            r"denied"
+            r")\b",
+            lower,
+        ):
             return "REJECTED"
+        if re.search(r"\b(appeal\s+is\s+allowed|appeal.*?allowed|directed\s+to\s+provide|cpio\s+is\s+directed\s+to\s+provide)\b", lower):
+            return "APPEAL_ALLOWED"
         return None
 
     @staticmethod
@@ -502,6 +516,22 @@ Show cause notice under Section 20(1) is issued. Penalty of Rs. 25,000 may be im
         self.assertEqual(case.case_number, "UNKNOWN")
         self.assertEqual(case.source, "CIC")
         self.assertEqual(case.sections_invoked, [])
+
+    def test_dates_are_not_extracted_as_sections(self):
+        segmented = SegmentedDecision(
+            HEADER="File No: CIC/AAOIN/A/2017/102333",
+            RTI_REQUEST=(
+                "RTI dated 10.03.2016. CPIO reply dated 20.04.2016. "
+                "Names of committee members and mobile numbers were sought."
+            ),
+            COMMISSION_FINDINGS=(
+                "The reply furnished to the appellant is just and proper. "
+                "Interference of the Commission is not called for."
+            ),
+        )
+        case = LegalExtractor().extract(segmented, use_llm=False)
+        self.assertEqual(case.sections_invoked, [])
+        self.assertEqual(case.outcome, "REJECTED")
 
 
 def _run_tests() -> int:

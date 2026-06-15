@@ -27,7 +27,7 @@ export default function LegalBanner() {
             fontWeight: 500,
           }}
         >
-          ⚠ Advisory only — all decisions are the PIO's legal responsibility under RTI Act 2005
+          Legal research assistance only — final RTI decisions remain the PIO's responsibility
         </span>
       </div>
     )
@@ -65,7 +65,7 @@ export default function LegalBanner() {
             lineHeight: '1.5',
           }}
         >
-          This system generates advisory recommendations only. All routing and disclosure decisions remain the sole responsibility of the PIO under RTI Act 2005, Section 5. Failure to review before acting may attract liability under Section 20.
+          This system provides legal research and drafting assistance only. The final decision under the RTI Act, 2005 remains the responsibility of the concerned PIO.
         </div>
       </div>
       <button

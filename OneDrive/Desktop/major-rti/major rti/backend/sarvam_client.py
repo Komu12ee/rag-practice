@@ -7,8 +7,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Load configuration from environment variables with defaults
-# SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_hhusezzy_cnfsLw6EbCOox523LJGXm15G")
-SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_0mfxhg3i_JT6kA0PStfJJ7z2mN2OIl5Mc")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_hhusezzy_cnfsLw6EbCOox523LJGXm15G")
+# SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_0mfxhg3i_JT6kA0PStfJJ7z2mN2OIl5Mc")
 
 SARVAM_MODEL = os.getenv("SARVAM_MODEL", "sarvam-105b")
 SARVAM_API_URL = os.getenv("SARVAM_API_URL", "https://api.sarvam.ai/v1/chat/completions")

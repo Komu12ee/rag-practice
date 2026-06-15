@@ -55,7 +55,7 @@ export default function RTIReferenceView() {
       {/* Header */}
       <div>
         <span className="text-page-title">RTI Act Reference</span>
-        <p className="text-caption mt-1">Legal knowledge base for PIO decision-making</p>
+        <p className="text-caption mt-1">Legal knowledge base for RTI research and drafting assistance</p>
       </div>
 
       {/* Search Bar */}

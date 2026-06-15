@@ -1,272 +1,856 @@
-# ⚖️ RTI Intelligence System — PIO Dashboard (CHiPS)
+# RTI Legal Research & Precedent Support System
 
-A legally grounded decision support system designed to assist the Public Information Officer (PIO) at the Chhattisgarh Infotech Promotion Society (CHiPS) in routing, analyzing, and documenting decisions on Right to Information (RTI) applications under the RTI Act 2005.
+An internal legal-intelligence application for assisting Indian government officers with RTI Act, 2005 research, precedent lookup, statutory analysis, and draft reply generation.
 
-The system employs a **5-Agent Hybrid Pipeline** leveraging local vector similarity retrieval (RAG) and adversarial balancing to provide legally defensible, explainable recommendations.
+This project is currently tailored for the Chhattisgarh Infotech Promotion Society (CHiPS) RTI workflow, but the architecture is general enough to support other public authorities after updating department data, corpus files, templates, and deployment settings.
 
----
+> Important: This system provides legal research and drafting assistance only. The final decision under the RTI Act, 2005 remains the responsibility of the concerned Public Information Officer (PIO).
 
-## 📐 Core Architecture & Legal Safeguards
-
-1. **Human-in-the-Loop Interlock Gate**: The AI recommends, but the PIO decides. Parameters extracted in Step 2 must be verified by the PIO before exemption analysis executes. Decisions require explicit disclaimer signature.
-2. **Immutable Audit Trail**: All queries, AI outputs, and PIO overrides are written to an append-only, SHA-256 hash-chained SQLite database (`backend/rti_audit.db`). This provides a legally verifiable defense record for Central Information Commission (CIC) proceedings.
-3. **Adversarial Disclosure Balancing**: For every rejection recommended, the system forces a side-by-side display of the strongest legal case for disclosure vs. exemption, combating systemic "refuse-by-default" bias.
-4. **Citation Grounding (RAG)**: The LLM is strictly prohibited from citing sections, cases, or external laws not present in the local retrieved legal corpus. Exact quotes are cited alongside cosine similarity scores.
-5. **Hybrid LLM Architecture**: 
-   - **Reasoning & Drafting**: Primary completion calls (classification, parameter extraction, statutory analysis, balancing, synthesis, and letter drafting) invoke the **Sarvam AI (`sarvam-105b`)** completions model via `backend/sarvam_client.py`.
-   - **Local Semantic Retrieval**: Embeddings for local RAG query matching and department search similarity are computed locally using **Ollama** running **`nomic-embed-text`**.
-   - **Local Heuristics Fallback**: If the Sarvam API is unreachable or the API key is not present, the system degrades gracefully to deterministic Python regex rules, keyword maps, and heuristics.
-6. **Bilingual Document Export**: Generates official RTI response letters (via `backend/response_letter.py`) and detailed AI analysis reports (via `backend/export_report.py`) in Word (`.docx`) format, resolving character rendering failures and missing details.
+The application must not be treated as an automated decision-making system. It should not decide "approve", "reject", "transfer", "partial disclosure", or "full disclosure" on behalf of the PIO. Its role is to help the PIO understand the request, relevant RTI Act provisions, comparable cases, legal observations, disclosure arguments, exemption arguments, and draft reply language.
 
 ---
 
-## 📂 Project Structure
+## Table Of Contents
 
-```
-├── backend/
-│   ├── main.py                      # FastAPI API server for the React web application
-│   ├── db.py                        # SQLite immutable audit trail & SHA-256 hash-chaining
-│   ├── ocr.py                       # PDF/Image text extraction & bilingual language detection
-│   ├── routing.py                   # Agent 1: 3-Pass progressive Jurisdiction Classifier (Keyword + Vector + LLM)
-│   ├── extractor.py                 # Agent 2: Information parameter extractor (Sarvam AI structured JSON)
-│   ├── exemption_rules.py           # Agent 3 - Layer A: Hardcoded deterministic exemption rules
-│   ├── llm_analyzer.py              # Agent 3 - Layer B: LLM statutory analyzer using local RAG context
-│   ├── disclosure_balancer.py       # Agent 4: Adversarial disclosure balancer (Pro vs. Con)
-│   ├── recommendation_generator.py  # Agent 5: Synthesis recommendation compiler (Approve/Reject/Transfer)
-│   ├── response_letter.py           # Word (.docx) PIO response letter generator (bilingual, Mangal fallback)
-│   ├── export_report.py             # Word (.docx) AI Analysis Report generator (failsafe font styling)
-│   ├── document_parser.py           # Document text extraction (DOCX/PDF parsing)
-│   ├── rag_engine.py                # Local RAG vector retriever (Ollama embeddings)
-│   ├── legal_sections.py            # Statutory citation and cg-specific rule resolver
-│   ├── audit_logger.py              # Centralized logging, file backups, and transaction history
-│   ├── sarvam_client.py             # Centralized client for invoking Sarvam AI completions (sarvam-105b)
-│   └── rti_audit.db                 # Active database file containing the audit chain
-├── data/
-│   ├── departments.json             # Function matrix mapping departments to jurisdictions
-│   ├── dept_embeddings.json         # Precomputed dense embeddings for department functions
-│   ├── legal_sections.json          # Cached statutory sections, definitions, and cg-specific rules
-│   ├── rti_act_sections.json        # Section-aware chunked legal text of the RTI Act 2005
-│   ├── rti_sections_embeddings.json # Cached dense embeddings of the legal chunks
-│   └── sample_rtis.json             # Standardized scenarios used for pipeline benchmarks
-├── frontend/
-│   ├── app.py                       # Streamlit-based PIO Dashboard application
-│   └── pages/
-│       └── rti_reference.py         # Subpage for browsing reference laws and guidelines
-├── frontend-react/
-│   ├── src/
-│   │   ├── App.tsx                  # Main React view controller and step machine
-│   │   ├── components/              # Stepper, BalancerGrid, PIOLogForm, RecommendationCard components
-│   │   └── index.css                # Base stylesheet with Tailwind tokens
-│   ├── vite.config.ts               # Vite configuration and backend API proxy routing
-│   └── package.json                 # Node package configuration
-├── notebooks/
-│   ├── verify_routing.py            # Unit test for Agent 1 classification accuracy
-│   ├── verify_phase1.py             # Unit test for Agent 2 extraction and Layer A rules
-│   ├── verify_phase2_3.py           # End-to-end pipeline test (Agents 1 through 5)
-│   ├── test_ocr.py                  # Unit test for PDF/Image OCR and bilingual extraction
-│   └── quick_test.py                # Quick database insertion & routing check
-├── requirements.txt                 # Python project library dependencies
-└── README.md                        # Documentation & setup instructions
-```
+1. [What This Project Does](#what-this-project-does)
+2. [Current Product Flow](#current-product-flow)
+3. [Repository Structure](#repository-structure)
+4. [Technology Stack](#technology-stack)
+5. [Prerequisites](#prerequisites)
+6. [Fresh Setup On Windows](#fresh-setup-on-windows)
+7. [Running The Application](#running-the-application)
+8. [Backend API](#backend-api)
+9. [Frontend App](#frontend-app)
+10. [Legal Corpus And Indexing](#legal-corpus-and-indexing)
+11. [Testing And Verification](#testing-and-verification)
+12. [Environment Variables](#environment-variables)
+13. [Data And Generated Files](#data-and-generated-files)
+14. [Troubleshooting](#troubleshooting)
+15. [Product And Legal Guardrails](#product-and-legal-guardrails)
+16. [MVP Scope And Phase 2 Direction](#mvp-scope-and-phase-2-direction)
 
 ---
 
-## 📖 Story Flow: Tracing a Request's Journey Through the System
+## What This Project Does
 
-To understand how data flows and which file executes at each point, let's follow a sample RTI request through its lifecycle:
+The system helps a PIO process an RTI application without forcing the officer through intermediate manual checkpoints during the first analysis run.
 
-> **The Request**: *"Please provide the private medical files and bank details of employee Ramesh Kumar."*
+At a high level it can:
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor PIO as PIO User
-    participant App as UI (React or Streamlit)
-    participant Parser as backend/document_parser.py
-    participant Route as backend/routing.py
-    participant Ext as backend/extractor.py
-    participant Rule as backend/exemption_rules.py
-    participant RAG as backend/rag_engine.py
-    participant LLM_Ana as backend/llm_analyzer.py
-    participant Bal as backend/disclosure_balancer.py
-    participant Gen as backend/recommendation_generator.py
-    participant DB as backend/db.py
-    participant Ollama as Local Ollama (Embeddings)
-    participant Sarvam as Sarvam AI (sarvam-105b)
+- Accept an RTI application as pasted text.
+- Accept an uploaded document and extract text using document parsing or OCR.
+- Run a full backend pipeline after submission without user interruption.
+- Show a ChatGPT/Claude-style processing screen while the pipeline runs.
+- Extract legal research parameters from the application.
+- Identify relevant RTI Act sections and possible exemption/disclosure issues.
+- Retrieve similar CIC/SIC/court-style precedent chunks where indexed locally.
+- Generate a draft RTI reply for PIO review.
+- Let the user open "Edit & Refine" only after the draft is generated.
+- Re-run only the drafting stage after edited parameters, instead of re-running OCR, routing, extraction, and statutory analysis.
+- Export reports and draft response files.
+- Log assistance records and preserve an audit trail.
 
-    PIO->>App: Submits text or File (PDF/Image/Word)
-    App->>Parser: parse_uploaded_file()
-    Parser-->>App: ParseResult (text, confidence, language, warnings)
-    App->>Route: classify_department()
-    Route->>Ollama: Get nomic-embed-text query embedding
-    Route->>Sarvam: Call primary model for classification
-    Route-->>App: RoutingResult (Pydantic Model) -> target: finance
-    App->>Ext: extract_information()
-    Ext->>Sarvam: Call model for structured metadata extraction
-    Ext-->>App: ExtractedInformation (Pydantic Model) -> personal_data: True
-    App->>PIO: Step 2 Interlock Screen (Visual Parameter Verification)
-    PIO->>App: Clicks "Confirm & Run Exemption Rules"
-    App->>Rule: evaluate_exemptions()
-    Rule-->>App: exemption_flags -> [Section 8(1)(j)]
-    App->>LLM_Ana: analyze_exemption_applicability()
-    LLM_Ana->>RAG: retrieve_relevant_sections("Section 8(1)(j)")
-    RAG->>Ollama: Get query embedding
-    RAG-->>LLM_Ana: Statutory Text (from data/rti_act_sections.json)
-    LLM_Ana->>Sarvam: Analyze statutory applicability with RAG context
-    LLM_Ana-->>App: LayerBAnalysis (Grounded LLM explanation + exact quotes + similarity score)
-    App->>Bal: compute_disclosure_balance()
-    Bal->>Sarvam: Generate side-by-side legal arguments
-    Bal-->>App: DisclosureBalance (Pro-Disclosure vs. Pro-Exemption case arguments)
-    App->>Gen: generate_final_recommendation()
-    Gen->>Sarvam: Synthesize recommendation details
-    Gen-->>App: FinalRecommendation (Pydantic Model) -> PARTIALLY_APPROVE
-    App->>PIO: Step 3 Dashboard: Renders recommendation card, side-by-side arguments & Layer B quotes
-    PIO->>App: Comments, accepts disclaimer, and clicks "Log Final Decision"
-    App->>DB: log_analysis()
-    DB->>DB: Computes SHA-256 (prev_hash + data)
-    DB-->>App: Appends to backend/rti_audit.db (Immutable Hash-Chain)
+The current application is a local desktop/development MVP. It is not yet a production NIC-style deployment.
+
+---
+
+## Current Product Flow
+
+The React UI follows this working flow:
+
+```text
+1. Intake
+   User pastes RTI text or uploads a file.
+
+2. Processing
+   The system runs OCR/document parsing, routing context, extraction,
+   statutory review, legal research synthesis, and drafting without stopping.
+
+3. Result
+   The user sees the final assisted draft reply and legal research context.
+
+4. Edit & Refine
+   Only after seeing the result, the user may edit AI-extracted parameters.
+
+5. Regenerate
+   Regeneration after editing re-runs the draft generation stage only.
+
+6. Assistance Record
+   The user can log that the generated material was reviewed as assistance.
 ```
 
-### 1. Step 1: The Arrival & Extraction
-*   **Action**: The PIO pastes the text or uploads a file (PDF/Image/Word Document) in the UI.
-*   **Execution**: The UI calls `parse_uploaded_file` inside `backend/document_parser.py`. It automatically detects digital PDFs (bypassing heavy OCR), extracts text from Microsoft Word documents (`.docx`, `.doc`), runs pytesseract OCR on scanned documents/images, and returns text, confidence, language, and quality warnings.
+This is intentionally different from older "decision support" flows. The UI should frame the product as:
 
-### 2. Step 2: Jurisdiction Routing (Agent 1)
-*   **Action**: The UI sends the text to `backend/routing.py`'s `classify_department` function.
-*   **Execution**: The classifier queries Sarvam AI's primary model (`sarvam-105b`). If unavailable, it falls back to a local pipeline using keyword checks and `nomic-embed-text` cosine similarity queries via **Ollama** against `data/dept_embeddings.json`. It maps the query to **finance** and returns a `RoutingResult`.
+```text
+Legal Research & Precedent Support
+```
 
-### 3. Step 3: Parametric Extraction (Agent 2)
-*   **Action**: The UI forwards the text to `backend/extractor.py`'s `extract_information` function.
-*   **Execution**: A structured cloud LLM call to Sarvam AI (`sarvam-105b`) structured via JSON schema parses parameters, setting:
-    *   `information_type: "employee"`
-    *   `personal_data: True` (since Ramesh Kumar is an individual)
-    *   `public_interest_override: False`
-    *   It returns an `ExtractedInformation` Pydantic model (falling back to regex heuristics if offline).
+not as:
 
-### 4. Step 4: The Interlock Gate
-*   **Action**: The UI halts and renders the extracted values on the screen.
-*   **Execution**: The PIO reviews the inputs. If correct, the PIO clicks **Confirm & Run Exemption Rules**.
-
-### 5. Step 6: Grounded RAG Analysis (Agent 3 - Layer B)
-*   **Action**: The text and triggered rules are sent to `backend/llm_analyzer.py`'s `analyze_exemption_applicability`.
-*   **Execution**: The module calls `backend/rag_engine.py`'s `retrieve_relevant_sections` to query `data/rti_act_sections.json` using local Ollama vector embeddings. The Sarvam AI LLM writes a reasoned justification grounded strictly in that text and returns a `LayerBAnalysis` model.
-
-### 6. Step 7: Adversarial Balancing (Agent 4)
-*   **Action**: The text and rule flags are sent to `backend/disclosure_balancer.py`'s `compute_disclosure_balance`.
-*   **Execution**: The Sarvam AI LLM generates side-by-side case arguments:
-    *   *Pro-Disclosure Case*: Highlights severing records under Section 10 and promoting public accountability.
-    *   *Pro-Exemption Case*: Focuses on protecting personal coordinates and preventing unwarranted privacy invasion.
-    *   It returns a `DisclosureBalance` object.
-
-### 7. Step 8: Synthesis Recommendation (Agent 5)
-*   **Action**: The routing result, confirmed extraction details, Layer B analysis, and disclosure balance are sent to `backend/recommendation_generator.py`'s `generate_final_recommendation`.
-*   **Execution**: The synthesis agent compiles all details and calls Sarvam AI to output a unified `FinalRecommendation` model:
-    *   `recommendation`: `PARTIALLY_APPROVE` (Redact personal files, disclose public records)
-    *   `rejection_risk`: Detail on Section 20(1) penalties (Rs. 250/day up to Rs. 25,000) for wrongful rejection.
-    *   `suggested_pio_action`: Timeline directive for partial release within 30 days.
-
-### 9. Step 9: Interactive Decision & Cryptographic Signing
-*   **Action**: The dashboard renders the final synthesized Recommendation Card, the adversarial columns, and Layer B RAG citations.
-*   **Execution**: The PIO accepts the legal responsibility disclaimer, enters comments, and clicks **Log Final Decision**.
-*   `backend/db.py`'s `log_analysis` instantiates an `AuditRecord`, fetches the preceding block's hash, computes the new SHA-256 hash chaining the previous hash to the current data, and appends the immutable row to `backend/rti_audit.db`.
+```text
+Automated Decision Support
+```
 
 ---
 
-## 🛠️ Prerequisites & Setup
+## Repository Structure
 
-### 1. Set Up Python Environment
-Ensure Python 3.8+ (preferably Python 3.13) is installed. Install required libraries:
+```text
+.
+|-- backend/
+|   |-- main.py                  FastAPI API server used by React
+|   |-- document_parser.py       Upload/document parsing wrapper
+|   |-- ocr.py                   PDF/image OCR helpers
+|   |-- routing.py               Department/routing context logic
+|   |-- extractor.py             RTI parameter extraction
+|   |-- exemption_rules.py       Deterministic RTI exemption flags
+|   |-- llm_analyzer.py          LLM-assisted statutory analysis
+|   |-- disclosure_balancer.py   Arguments for and against disclosure
+|   |-- response_letter.py       Draft RTI reply generation/export helpers
+|   |-- export_report.py         Analysis report generation
+|   |-- audit_logger.py          Assistance/audit logging helpers
+|   |-- db.py                    SQLite audit persistence
+|   |-- sarvam_client.py         Sarvam chat-completions client
+|   |-- requirements.txt         Backend dependencies
+|   `-- README.md                Backend-specific notes
+|
+|-- frontend-react/
+|   |-- src/
+|   |   |-- App.tsx              Main React shell and header/navigation
+|   |   |-- lib/stepMachine.ts   Intake/processing/result/refine flow
+|   |   |-- components/          UI components and screens
+|   |   `-- index.css            Tailwind/base styles
+|   |-- package.json             Node scripts and dependencies
+|   |-- vite.config.ts           Vite config, API proxy to backend:8002
+|   `-- README.md                Frontend notes
+|
+|-- src/
+|   |-- pipeline/                Legal extraction, segmentation, chunking
+|   |-- pipelines/               CLI indexing and query orchestrators
+|   |-- retrieval/               BM25/vector/hybrid retrieval
+|   |-- rag/                     Context assembly for legal reasoning
+|   |-- engine/                  RTI analysis orchestration
+|   |-- generation/              Response package templates
+|   |-- storage/                 Metadata persistence
+|   `-- README.md                Legal retrieval pipeline notes
+|
+|-- data/
+|   |-- chunks/                  Generated legal chunk JSONL files
+|   |-- extracted/               Extracted text from PDFs/documents
+|   |-- indexes/                 BM25 index and doc map
+|   |-- metadata/                Extracted case metadata JSON
+|   |-- db/                      Local SQLite case metadata
+|   `-- vectorstore/             Local Chroma/vector data if enabled
+|
+|-- scratch/
+|   |-- start_backend.py         Starts FastAPI backend on port 8002
+|   |-- test_api_server.py       Simple API smoke test
+|   `-- backend_persistent.log   Backend log created by start_backend.py
+|
+|-- tests/
+|   `-- test_integration.py      Phase 1 integration tests
+|
+|-- requirements.txt             Legal retrieval/indexing dependencies
+`-- README.md                    This file
+```
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Radix UI primitives
+- Lucide React icons
+
+### Backend
+
+- FastAPI
+- Pydantic
+- SQLite
+- python-docx
+- PyMuPDF
+- pdfplumber
+- pytesseract
+- Pillow
+- requests
+
+### Legal Retrieval Pipeline
+
+- BM25 via `rank_bm25`
+- ChromaDB vector store
+- Sentence Transformers for local embeddings
+- Optional Ollama/Qwen for local reasoning paths
+- Sarvam AI for cloud LLM-backed extraction, analysis, and drafting paths
+
+---
+
+## Prerequisites
+
+Install these before running the full project:
+
+1. Python 3.10 or newer
+2. Node.js 18 or newer
+3. npm
+4. Git
+5. Optional: Ollama, if you want local model support
+6. Optional: Tesseract OCR, if you want scanned image/PDF OCR
+7. Optional: Poppler, if PDF-to-image OCR paths are used
+
+For the current local project path, PowerShell examples assume:
+
 ```powershell
-pip install -r requirements.txt
+cd "C:\Users\hp\OneDrive\Desktop\major-rti\major rti"
 ```
 
-### 2. Set Up Ollama Locally
-The system requires a local Ollama server running to process embeddings and text synthesis.
-1. Download and install Ollama from [ollama.com](https://ollama.com).
-2. Start the Ollama local application.
-3. Download the required models in your terminal:
-   ```powershell
-   ollama pull qwen2.5:3b
-   ollama pull nomic-embed-text
-   ```
+If your project is stored somewhere else, replace the path in the commands.
 
 ---
 
-## 🚀 Navigation: How to Run the Project
+## Fresh Setup On Windows
 
-### 1. Run Verification Test Scripts
-Before launching the UI, verify that the backend agents are configured correctly and the Ollama server is communicating:
+### 1. Clone Or Open The Project
 
-- **Verify End-to-End Pipeline (Agents 1-5)**:
-  Runs a sample personal data query and prints the detailed outputs of routing, extraction, Layer A, Layer B (RAG), balancer, and synthesis.
-  ```powershell
-  python notebooks/verify_phase2_3.py
-  ```
-- **Verify Jurisdiction Classifier (Agent 1)**:
-  Benchmarks routing accuracy and bilingual parity across sample RTIs.
-  ```powershell
-  python notebooks/verify_routing.py
-  ```
-- **Verify Parameter Extractor & Rules (Phase 1)**:
-  ```powershell
-  python notebooks/verify_phase1.py
-  ```
-
-### 2. Launch the Streamlit PIO Dashboard
-Run the dashboard server from the root directory:
 ```powershell
-streamlit run frontend/app.py
-```
-*(If streamlit is not added to your system PATH but is installed in an Anaconda environment, execute:)*
-```powershell
-C:\Users\hp\anaconda3\Scripts\streamlit.exe run frontend/app.py
+cd "C:\Users\hp\OneDrive\Desktop\major-rti"
+cd "major rti"
 ```
 
-Open **`http://localhost:8502`** (or the port specified in your terminal output) in your web browser.
+### 2. Create A Python Virtual Environment
+
+If you do not already have a virtual environment:
+
+```powershell
+python -m venv backend\.venv
+```
+
+Activate it:
+
+```powershell
+backend\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, run:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+backend\.venv\Scripts\Activate.ps1
+```
+
+You can also use Anaconda Python directly, as many local scripts in this repo have been run with:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe
+```
+
+### 3. Install Backend Dependencies
+
+```powershell
+backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+```
+
+### 4. Install Legal Retrieval Dependencies
+
+```powershell
+backend\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+If you use Anaconda instead:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe -m pip install -r backend\requirements.txt
+c:\Users\hp\anaconda3\python.exe -m pip install -r requirements.txt
+```
+
+### 5. Install Frontend Dependencies
+
+```powershell
+cd frontend-react
+npm install
+cd ..
+```
+
+### 6. Optional Local Models
+
+Install Ollama from:
+
+```text
+https://ollama.com
+```
+
+Then pull local models if needed:
+
+```powershell
+ollama pull nomic-embed-text
+ollama pull qwen2.5:3b
+ollama pull qwen2.5:14b
+```
+
+Regex-only indexing and basic API tests do not require Ollama.
 
 ---
 
-## 🖥️ Dashboard Features & User Guide
+## Running The Application
 
-### 📥 New RTI Analysis
-- **Step 1: Input & Routing**: Paste the text of the RTI or upload a PDF/Image. The system detects the language (Hindi/English), performs OCR, and automatically classifies the target department.
-- **Step 2: Verification (Interlock)**: Review the AI-extracted parameters (IT systems, classifications, personal data flag). You *must* confirm or edit these coordinates before proceeding.
-- **Step 3: Synthesis & Exemption Rules Evaluation**:
-  - **Synthesized Action Card**: Displays the final recommendation (APPROVE / PARTIALLY_APPROVE / REJECT / TRANSFER) and suggested timelines.
-  - **Deterministic Flags (Layer A)**: Cards showing triggered exemptions.
-  - **Adversarial Columns**: Side-by-side case for disclosure vs. case for exemption.
-  - **Grounded Statutory Quotes**: Reasoning from Layer B showing cosine similarity scores and exact quotes from the RTI Act.
-  - **PIO Decision Entry**: Select your action, write overrides if applicable, check the legal responsibility box, and click **Log Final Decision** to chain the record.
+The main app is the React + FastAPI workflow.
 
-### 📋 Audit Trail
-- Displays the historical chain of all RTI applications, system recommendations, and final PIO actions.
-- Each block is cryptographically chained to prevent manual alteration or deletion, serving as your legal defense record.
+You need two terminals.
 
-### 📊 System Status
-- Displays real-time health checks of the local SQLite database, PDF parsers, and local Ollama model connections.
+### Terminal 1: Start Backend
+
+From the repository root:
+
+```powershell
+backend\.venv\Scripts\python.exe scratch\start_backend.py
+```
+
+or with Anaconda:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe scratch\start_backend.py
+```
+
+The backend runs at:
+
+```text
+http://127.0.0.1:8002
+```
+
+The script writes logs to:
+
+```text
+scratch/backend_persistent.log
+```
+
+Health check:
+
+```text
+http://127.0.0.1:8002/api/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### Terminal 2: Start Frontend
+
+From the repository root:
+
+```powershell
+cd frontend-react
+npm run dev
+```
+
+The frontend runs at:
+
+```text
+http://localhost:3000
+```
+
+The Vite proxy sends `/api/...` requests to:
+
+```text
+http://localhost:8002
+```
+
+### Normal Browser Flow
+
+1. Open `http://localhost:3000`.
+2. Paste an RTI application or upload a supported file.
+3. Submit the application.
+4. Wait on the processing screen.
+5. Review the generated draft reply.
+6. Optionally click `Edit & Refine`.
+7. Regenerate the draft after edits.
+8. Log/download assistance outputs if needed.
 
 ---
 
-## 💻 Running the React + Vite Dashboard
+## Backend API
 
-The system includes a premium, non-conversational React + Vite + TypeScript dashboard which replaces the Streamlit UI, following the exact UI rules and step machines specified in the PIO guidelines.
+The FastAPI application lives in:
 
-### 1. Launch the FastAPI API Server (Backend)
-Run the backend startup script from the root directory using the Anaconda Python environment:
-```powershell
-C:\Users\hp\anaconda3\python.exe scratch/start_backend.py
+```text
+backend/main.py
 ```
-This script initializes the FastAPI gateway on **`http://localhost:8000`** containing the routes needed for the React frontend (`/api/ocr`, `/api/route`, `/api/extract`, `/api/evaluate_exemptions`, `/api/download_analysis`, `/api/download_response`, and `/api/log_decision`). Startup parameters and uvicorn logs are written to `scratch/backend_persistent.log`.
 
-### 2. Launch the React Vite Frontend
-Navigate to the `frontend-react` folder and run the development server:
-1. **Install Dependencies**:
-   ```bash
-   cd frontend-react
-   npm install
-   ```
-2. **Start Dev Server**:
-   ```bash
-   npm run dev
-   ```
-This starts the Vite dev server on **`http://localhost:3000`**. The Vite server is configured with a proxy mapping requests to `/api` directly to the FastAPI server running on port 8000.
+Important endpoints:
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/health` | GET | Basic backend health check |
+| `/api/ocr` | POST | Extract text from uploaded document |
+| `/api/route` | POST | Get department/routing context |
+| `/api/extract` | POST | Extract structured RTI parameters |
+| `/api/evaluate_exemptions` | POST | Run statutory/legal research synthesis |
+| `/api/generate_draft` | POST | Generate or regenerate draft RTI reply |
+| `/api/download_analysis` | POST | Download analysis report |
+| `/api/download_response` | POST | Download draft response |
+| `/api/log_decision` | POST | Log assistance/audit record |
+| `/api/audit_trail` | GET | Read recent audit trail records |
+| `/api/system_status` | GET | Check database/OCR/Ollama status |
+| `/api/legal_sections` | GET | Return local RTI Act section reference data |
+
+### API Smoke Test
+
+Start the backend first, then run:
+
+```powershell
+backend\.venv\Scripts\python.exe scratch\test_api_server.py
+```
+
+or:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe scratch\test_api_server.py
+```
+
+This checks health, route, extract, legal evaluation, and logging endpoints.
+
+---
+
+## Frontend App
+
+The main React app is in:
+
+```text
+frontend-react/src/App.tsx
+```
+
+The step flow is controlled by:
+
+```text
+frontend-react/src/lib/stepMachine.ts
+```
+
+Important screens:
+
+| File | Purpose |
+| --- | --- |
+| `frontend-react/src/components/steps/InputStep.tsx` | Text/file intake |
+| `frontend-react/src/components/steps/ProcessingStep.tsx` | Thinking/progress screen during backend pipeline |
+| `frontend-react/src/components/steps/ResultStep.tsx` | Assisted draft reply and legal research output |
+| `frontend-react/src/components/steps/RefineStep.tsx` | Post-result edit/refine screen |
+| `frontend-react/src/components/steps/CompletedStep.tsx` | Assistance record completion screen |
+
+Build the frontend:
+
+```powershell
+cd frontend-react
+npm run build
+```
+
+Preview a production build:
+
+```powershell
+cd frontend-react
+npm run preview
+```
+
+---
+
+## Legal Corpus And Indexing
+
+The corpus pipeline under `src/` converts CIC/SIC/legal source files into metadata, chunks, BM25 indexes, and optional vector indexes.
+
+Main indexing file:
+
+```text
+src/pipelines/index_pipeline.py
+```
+
+### Common Fast Indexing Command
+
+Use this when you want to process the local dummy CIC case corpus and rebuild BM25 without waiting for vector embeddings:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --source data\dummy-cic-case --mode regex-only --force --skip-embeddings
+```
+
+What the flags mean:
+
+| Flag | Meaning |
+| --- | --- |
+| `--source data\dummy-cic-case` | Folder containing source PDFs or extracted text |
+| `--mode regex-only` | Use deterministic extraction instead of local LLM extraction |
+| `--force` | Reprocess already indexed cases and overwrite metadata/chunk JSONL |
+| `--skip-embeddings` | Skip Chroma/vector embeddings and rebuild BM25 only |
+
+Use `--skip-embeddings` if Sentence Transformers cannot download a model or if you only need BM25 search.
+
+### Rebuild BM25 Only
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --rebuild-index
+```
+
+### Full Indexing With Embeddings
+
+Only use this when local embedding dependencies are installed and the sentence-transformers model is cached or network access is available:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --source data\dummy-cic-case --mode regex-only --force
+```
+
+If the run repeatedly tries to access HuggingFace and fails, use:
+
+```powershell
+--skip-embeddings
+```
+
+### Query Pipeline
+
+Run a local legal retrieval query from the command line:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipelines\query_pipeline.py --text "Please provide file notings. If denied under Section 8(1)(j), provide reasons." --type exemption_check --department-hint "Revenue Department"
+```
+
+The output includes:
+
+- `analysis`
+- `responses.internal_note`
+- `responses.pio_recommendation`
+- `responses.draft_rti_reply`
+
+Note: Some legacy names still contain `recommendation` because they are older data models. Product-facing UI should present legal research and draft assistance, not final decision automation.
+
+---
+
+## Testing And Verification
+
+### Backend Import Check
+
+```powershell
+backend\.venv\Scripts\python.exe -c "import backend.main; print('backend import ok')"
+```
+
+### API Smoke Test
+
+Backend must be running first:
+
+```powershell
+backend\.venv\Scripts\python.exe scratch\test_api_server.py
+```
+
+### Legal Extractor Regression Tests
+
+This checks the legal extractor, including protection against reading dates as RTI sections:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipeline\legal_extractor.py --test
+```
+
+### Integration Tests
+
+```powershell
+backend\.venv\Scripts\python.exe -m pytest tests\test_integration.py -v --no-llm
+```
+
+If your corpus path is different:
+
+```powershell
+$env:CIC_DECISIONS_DIR="data\dummy-cic-case"
+backend\.venv\Scripts\python.exe -m pytest tests\test_integration.py -v --no-llm
+```
+
+### Frontend Build Test
+
+```powershell
+cd frontend-react
+npm run build
+```
+
+---
+
+## Environment Variables
+
+The project can run partly without external LLMs because several modules have heuristic fallbacks. For better extraction and drafting, configure Sarvam and/or local models.
+
+### Sarvam
+
+Set your key in the shell before starting the backend:
+
+```powershell
+$env:SARVAM_API_KEY="your_key_here"
+```
+
+Optional overrides:
+
+```powershell
+$env:SARVAM_MODEL="sarvam-105b"
+$env:SARVAM_API_URL="https://api.sarvam.ai/v1/chat/completions"
+```
+
+Do not commit real API keys to the repository.
+
+### Ollama / Qwen
+
+```powershell
+$env:QWEN_MODEL="qwen2.5:14b"
+```
+
+or:
+
+```powershell
+$env:OLLAMA_QWEN_MODEL="qwen2.5:14b"
+```
+
+Ollama default API URL:
+
+```text
+http://localhost:11434
+```
+
+---
+
+## Data And Generated Files
+
+Common generated paths:
+
+| Path | Meaning |
+| --- | --- |
+| `scratch/backend_persistent.log` | Backend runtime log from `scratch/start_backend.py` |
+| `rti_audit.db` | Root audit database used by some older code paths |
+| `backend/rti_audit.db` | Backend audit database if created by backend modules |
+| `audit_log/` | File-based audit output, if enabled |
+| `data/extracted/` | Extracted text and extraction metadata |
+| `data/metadata/` | Extracted case metadata JSON |
+| `data/chunks/` | Legal chunk JSONL files |
+| `data/indexes/bm25_index.pkl` | BM25 index |
+| `data/indexes/bm25_docmap.json` | BM25 chunk lookup map |
+| `data/db/cases.db` | SQLite case metadata store |
+| `data/vectorstore/` | Chroma/vector store data |
+
+Generated data may be large. Do not delete corpus or generated indexes unless you are intentionally rebuilding.
+
+---
+
+## Troubleshooting
+
+### Frontend Loads But API Calls Fail
+
+Check that the backend is running on port `8002`:
+
+```text
+http://127.0.0.1:8002/api/health
+```
+
+Also check:
+
+```text
+frontend-react/vite.config.ts
+```
+
+The proxy should point to:
+
+```text
+http://localhost:8002
+```
+
+### Backend Starts But Browser Shows Old Results
+
+Restart both servers:
+
+```powershell
+# Stop backend terminal with Ctrl+C
+# Stop Vite terminal with Ctrl+C
+
+backend\.venv\Scripts\python.exe scratch\start_backend.py
+
+cd frontend-react
+npm run dev
+```
+
+Then hard-refresh the browser.
+
+### `ModuleNotFoundError`
+
+Install both dependency files:
+
+```powershell
+backend\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+backend\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+### OCR Does Not Work For Scanned PDFs
+
+Install Tesseract OCR and ensure it is on PATH.
+
+On Windows, verify:
+
+```powershell
+tesseract --version
+```
+
+If Tesseract is unavailable, digital PDFs and text input can still work through non-OCR paths.
+
+### Indexing Is Too Slow
+
+Use regex-only mode and skip embeddings:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --source data\dummy-cic-case --mode regex-only --force --skip-embeddings
+```
+
+### Sentence Transformers Tries To Download And Fails
+
+This happens when the embedding model is not cached and network access is blocked. Use:
+
+```powershell
+--skip-embeddings
+```
+
+BM25 will still be rebuilt.
+
+### Bad Sections Like `10`, `20`, `11` Appear From Dates
+
+Run the latest extractor and force-refresh chunks:
+
+```powershell
+c:\Users\hp\anaconda3\python.exe src\pipeline\legal_extractor.py --test
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --source data\dummy-cic-case --mode regex-only --force --skip-embeddings
+```
+
+The extractor should only treat explicit references like `Section 8(1)(j)` or `u/s 6(3)` as RTI sections.
+
+### Port Already In Use
+
+Find the process using the port:
+
+```powershell
+netstat -ano | findstr :8002
+```
+
+Stop it from Task Manager or use a different port in:
+
+```text
+scratch/start_backend.py
+frontend-react/vite.config.ts
+```
+
+---
+
+## Product And Legal Guardrails
+
+These are non-negotiable design rules for this system:
+
+1. The system is a legal research and drafting assistant, not a decision engine.
+2. The first submitted RTI application should run through the full pipeline without user interruption.
+3. The user should see only the processing screen until the generated draft/result is ready.
+4. Extracted parameters can be edited only after the generated result is shown.
+5. Regeneration after edits must re-run only the drafting stage.
+6. UI labels must avoid final-decision language as the primary output.
+7. The final PIO responsibility disclaimer must be visible in the result flow.
+8. All generated text must be treated as assistance and reviewed by the officer.
+9. Legal reasoning should be grounded in the RTI Act, indexed precedents, circulars, and local source material.
+10. Audit records should preserve what the system generated and what the user logged.
+
+Recommended disclaimer text:
+
+```text
+This system provides legal research and drafting assistance only. The final decision under the RTI Act, 2005 remains the responsibility of the concerned PIO.
+```
+
+---
+
+## MVP Scope And Phase 2 Direction
+
+### MVP
+
+The current MVP should focus on:
+
+- Text intake and file upload intake.
+- Full uninterrupted processing after submit.
+- Processing/thinking UI.
+- RTI Act, 2005 statutory analysis.
+- Extracted RTI parameters.
+- Legal research synthesis.
+- Draft RTI reply generation.
+- Post-result edit/refine flow.
+- Draft-only regeneration after edits.
+- Basic audit/assistance logging.
+- Word/report downloads.
+- Local CIC chunk indexing and BM25 retrieval.
+
+### Phase 2
+
+Phase 2 can add:
+
+- More complete CIC decision corpus.
+- SIC decision corpus.
+- High Court judgment corpus.
+- Supreme Court judgment corpus.
+- Departmental circulars and guidelines.
+- Better precedent ranking and citation display.
+- Role-based workflows for PIO, FAA, and Admin.
+- Case assignment and workload tracking.
+- Stronger audit dashboards.
+- Production authentication.
+- Deployment hardening.
+- Offline model packaging.
+- More robust multilingual OCR and Hindi drafting.
+
+---
+
+## Role-Based User Types
+
+### PIO
+
+Primary user. Can submit RTI applications, review generated legal research, edit/refine extracted parameters after generation, regenerate drafts, download outputs, and log assistance records.
+
+### FAA
+
+Reviewer. Can inspect prior assistance records, draft replies, legal reasoning, and audit history for appeal-stage review. Should not alter original PIO assistance records except through a separate review record.
+
+### Admin
+
+System manager. Can manage corpus updates, department mappings, users, audit exports, indexing jobs, configuration, and health monitoring.
+
+---
+
+## Quick Command Reference
+
+From the project root:
+
+```powershell
+# Start backend
+backend\.venv\Scripts\python.exe scratch\start_backend.py
+
+# Start frontend
+cd frontend-react
+npm run dev
+
+# Backend smoke test
+backend\.venv\Scripts\python.exe scratch\test_api_server.py
+
+# Legal extractor tests
+c:\Users\hp\anaconda3\python.exe src\pipeline\legal_extractor.py --test
+
+# Fast corpus refresh
+c:\Users\hp\anaconda3\python.exe src\pipelines\index_pipeline.py --source data\dummy-cic-case --mode regex-only --force --skip-embeddings
+
+# Frontend build
+cd frontend-react
+npm run build
+```
+
+---
+
+## Current Status Notes
+
+- The active UI is `frontend-react`.
+- The active backend startup script is `scratch/start_backend.py`.
+- The backend port used by the frontend proxy is `8002`.
+- The product language has been shifted from decision support to legal research and precedent support.
+- Some older backend/model names still contain terms like `recommendation` for compatibility. These should be hidden or reframed at the UI/product layer unless refactored carefully.
+- The corpus pipeline can rebuild BM25 without embeddings using `--skip-embeddings`.
+- For local development, prefer non-destructive re-indexing and avoid deleting source PDFs or extracted corpus data.

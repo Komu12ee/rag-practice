@@ -13,7 +13,7 @@ import {
   Recommendation
 } from './types';
 
-// Zod schema for Step 2 Form parameter validation
+// Zod schema for post-result parameter refinement validation
 export const ExtractedInformationSchema = z.object({
   classification_type: z.enum(['citizen_data', 'employee', 'procurement', 'cybersecurity', 'other'], {
     required_error: "Classification type is required.",
@@ -26,7 +26,7 @@ export const ExtractedInformationSchema = z.object({
   explanation: z.string().min(1, "Please provide an explanation notes."),
 });
 
-// Zod schema for Step 3 PIO decision logging validation
+// Zod schema for logging a PIO-reviewed assistance record
 export const PIOLogSchema = z.object({
   pio_action_taken: z.enum(['APPROVED', 'PARTIALLY_APPROVE', 'REJECTED', 'TRANSFER', 'PENDING', 'OVERRIDDEN']),
   override_department: z.string().optional(),
@@ -90,7 +90,7 @@ export async function extractParameters(text: string): Promise<ExtractedInformat
 }
 
 /**
- * Evaluate exemptions and generate RAG analyses, balancing arguments, and final synthesis recommendation
+ * Evaluate exemptions and generate RAG analyses, balancing arguments, and legal research synthesis
  */
 export async function evaluateExemptionsAndSynthesis(verifiedInfo: ExtractedInformation): Promise<EvaluationResult> {
   const response = await fetch('/api/evaluate_exemptions', {
@@ -107,7 +107,7 @@ export async function evaluateExemptionsAndSynthesis(verifiedInfo: ExtractedInfo
 }
 
 /**
- * Log final PIO decision to the immutable hash chain
+ * Log the PIO-reviewed assistance record to the immutable hash chain
  */
 export async function logFinalDecision(auditRecord: Omit<AuditRecord, 'timestamp'>): Promise<AuditRecord> {
   const payload = {
