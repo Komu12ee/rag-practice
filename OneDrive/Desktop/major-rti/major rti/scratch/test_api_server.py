@@ -9,7 +9,7 @@ import json
 import urllib.request
 import urllib.error
 
-API_URL = "http://localhost:8000/api"
+API_URL = "http://localhost:8002/api"
 
 def make_request(path: str, data: dict = None) -> dict:
     url = f"{API_URL}{path}"

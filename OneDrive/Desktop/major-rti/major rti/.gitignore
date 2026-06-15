@@ -109,3 +109,4 @@ scratch/*.tmp
 scratch/*_output.txt
 tmp/
 temp/
+rti_print_all_details_pdfs/

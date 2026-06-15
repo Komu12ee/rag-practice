@@ -18,6 +18,6 @@ import uvicorn
 
 try:
     print("[start_backend.py] Starting backend server...")
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8002)
 except Exception as e:
     print(f"[start_backend.py] Failed to start backend: {e}")
