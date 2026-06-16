@@ -188,6 +188,9 @@ class GenerateDraftWithReferencesRequest(BaseModel):
     references: List[RetrievedReferenceReact]
 
 
+REFERENCE_RESULT_LIMIT = 5
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -196,6 +199,23 @@ class GenerateDraftWithReferencesRequest(BaseModel):
 async def health_endpoint():
     """Simple status check."""
     return {"status": "ok", "app": "RTI PIO API Server"}
+
+
+@app.get("/api/ai/status")
+async def ai_status_endpoint():
+    """Show active AI provider without exposing secrets."""
+    try:
+        from ai_provider import load_config
+
+        config = load_config()
+        return {
+            "provider": config.provider,
+            "model": config.model,
+            "ollama_base_url": config.ollama_base_url if config.provider == "ollama" else None,
+            "sarvam_configured": bool(config.sarvam_api_key),
+        }
+    except Exception as exc:
+        return {"provider": "unknown", "error": str(exc)}
 
 
 
@@ -624,7 +644,7 @@ async def references_endpoint(req: ReferenceRetrievalRequest):
                 sections=req.evaluation.final_recom.citations,
                 department_context=req.routing.primary_department,
                 outcome_hint="",
-                limit=8,
+                limit=REFERENCE_RESULT_LIMIT,
             )
             seen_titles = {ref.title for ref in references}
             for card in cards:
@@ -646,12 +666,12 @@ async def references_endpoint(req: ReferenceRetrievalRequest):
                         metadata=card.metadata,
                     )
                 )
-                if len(references) >= 8:
+                if len(references) >= REFERENCE_RESULT_LIMIT:
                     break
         except Exception as retrieval_error:
             print(f"[Reference Retrieval] Corpus retrieval fallback used: {retrieval_error}")
 
-        return {"references": references[:8]}
+        return {"references": references[:REFERENCE_RESULT_LIMIT]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reference retrieval failed: {str(e)}")
 

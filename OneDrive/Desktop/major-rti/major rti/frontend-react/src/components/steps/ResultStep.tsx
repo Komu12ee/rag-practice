@@ -145,7 +145,7 @@ export default function ResultStep({
         routing,
         evaluation,
       })
-      setReferences(result.references)
+      setReferences(result.references.slice(0, 5))
       if (!result.references.length) {
         setReferenceWarning('No highly relevant references were found in the indexed corpus. The draft remains based on RTI Act analysis only.')
       }
@@ -264,7 +264,7 @@ export default function ResultStep({
 
           {!isSearchingReferences && references.length === 0 && !referenceWarning && (
             <p className="text-[15px] leading-relaxed text-[var(--t3)]">
-              References are not shown automatically. Use Add Reference to search RTI Act provisions, CIC/SIC material, court references, circulars, and historical cases on demand.
+              References are not shown automatically. Use Add Reference to search RTI Act provisions, CIC/SIC material, court references, circulars, and historical cases on demand. The top 5 matches will be shown.
             </p>
           )}
 

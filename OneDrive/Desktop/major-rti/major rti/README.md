@@ -305,13 +305,20 @@ You need two terminals.
 From the repository root:
 
 ```powershell
-backend\.venv\Scripts\python.exe scratch\start_backend.py
+c:\Users\hp\anaconda3\python.exe run.py --provider mock
 ```
 
-or with Anaconda:
+Choose the provider for the kind of work you are doing:
 
 ```powershell
-c:\Users\hp\anaconda3\python.exe scratch\start_backend.py
+# Production behavior: Sarvam API, real retrieval, real drafting
+c:\Users\hp\anaconda3\python.exe run.py --provider sarvam
+
+# Local LLM behavior: Ollama qwen, no Sarvam API cost
+c:\Users\hp\anaconda3\python.exe run.py --provider ollama --model qwen2.5:14b
+
+# Frontend/workflow testing: deterministic fake AI responses
+c:\Users\hp\anaconda3\python.exe run.py --provider mock
 ```
 
 The backend runs at:
@@ -330,6 +337,12 @@ Health check:
 
 ```text
 http://127.0.0.1:8002/api/health
+```
+
+AI provider status:
+
+```text
+http://127.0.0.1:8002/api/ai/status
 ```
 
 Expected response:
@@ -573,7 +586,15 @@ npm run build
 
 ## Environment Variables
 
-The project can run partly without external LLMs because several modules have heuristic fallbacks. For better extraction and drafting, configure Sarvam and/or local models.
+The project supports provider switching for development and production:
+
+| Mode | Command | AI behavior |
+| --- | --- | --- |
+| Production | `python run.py --provider sarvam` | Uses Sarvam API. Requires `SARVAM_API_KEY`. |
+| Local LLM | `python run.py --provider ollama --model qwen2.5:14b` | Uses local Ollama. No Sarvam API cost. |
+| Mock | `python run.py --provider mock` | Uses deterministic fake responses. No external AI calls. |
+
+The selected mode is stored in `RTI_AI_PROVIDER`, and the model is stored in `RTI_AI_MODEL`.
 
 ### Sarvam
 
@@ -595,13 +616,8 @@ Do not commit real API keys to the repository.
 ### Ollama / Qwen
 
 ```powershell
-$env:QWEN_MODEL="qwen2.5:14b"
-```
-
-or:
-
-```powershell
-$env:OLLAMA_QWEN_MODEL="qwen2.5:14b"
+$env:OLLAMA_BASE_URL="http://127.0.0.1:11434"
+c:\Users\hp\anaconda3\python.exe run.py --provider ollama --model qwen2.5:14b
 ```
 
 Ollama default API URL:
